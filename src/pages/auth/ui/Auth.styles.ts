@@ -39,6 +39,7 @@ export const createStyles = (colors: ThemeColors) =>
     fields: { gap: 20, marginTop: 32 },
     passwordContainer: { position: "relative" },
     passwordInput: { paddingRight: 85 },
+    passwordHint: { color: colors.textSecondary, fontSize: 12, lineHeight: 18 },
     passwordToggle: { position: "absolute", right: 16, bottom: 18 },
     passwordToggleLabel: { color: colors.textSecondary, fontSize: 12 },
     error: { color: colors.accentText, marginTop: 14 },

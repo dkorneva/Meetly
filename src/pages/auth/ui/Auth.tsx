@@ -4,6 +4,7 @@ import { Button, Field } from "../../../shared/ui/controls/index";
 import { Icon } from "../../../shared/ui/Icon";
 import { Text, useTheme, useThemedStyles } from "../../../shared/theme/index";
 import { createStyles } from "./Auth.styles";
+import { validateAuth } from "../model/validation";
 
 // Общая форма входа и регистрации. register выбирает режим формы.
 // onSwitch переключает режим, onBack возвращает назад, onEnter передаёт данные родителю.
@@ -32,8 +33,13 @@ export default function Auth({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [visible, setVisible] = useState(false); // Показывать ли пароль открытым текстом.
-  const [error, setError] = useState(""); // Сообщение о неверно заполненной форме.
+  const [submitted, setSubmitted] = useState(false);
+  const [confirmationTouched, setConfirmationTouched] = useState(false);
+  const errors = validateAuth({ register, name, email, password, confirmPassword });
+  const error = submitted ? errors.name || errors.email || errors.password : "";
+  const confirmationError = (submitted || confirmationTouched) ? errors.confirmPassword : "";
   return (
     <ScrollView
       contentContainerStyle={styles.root}
@@ -77,11 +83,13 @@ export default function Auth({
         <View style={styles.passwordContainer}>
           <Field
             label="Пароль"
-            placeholder={register ? "Не менее 8 символов" : "Введите пароль"}
+            placeholder={register ? "Не менее 6 символов" : "Введите пароль"}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!visible} // Скрываем символы пароля, пока visible равно false.
             autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete={register ? "new-password" : "current-password"}
             style={styles.passwordInput}
           />
           <Pressable
@@ -93,6 +101,28 @@ export default function Auth({
             </Text>
           </Pressable>
         </View>
+        {register && (
+          <>
+            <Text style={styles.passwordHint}>
+              Минимум 6 символов: строчная и заглавная латинские буквы, цифра и специальный символ.
+            </Text>
+            <Field
+              label="Подтверждение пароля"
+              placeholder="Повторите пароль"
+              value={confirmPassword}
+              onChangeText={(value) => {
+                setConfirmPassword(value);
+                setConfirmationTouched(true);
+              }}
+              onBlur={() => setConfirmationTouched(true)}
+              secureTextEntry={!visible}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+            />
+            {!!confirmationError && <Text style={styles.error}>{confirmationError}</Text>}
+          </>
+        )}
       </View>
       {/* Ошибка видна только тогда, когда её текст не пустой. */}
       {error.length > 0 && <Text style={styles.error}>{error}</Text>}
@@ -100,27 +130,8 @@ export default function Auth({
         style={styles.submitButton}
         title={register ? "Создать аккаунт" : "Войти"}
         onPress={() => {
-          // Проверяем поля по очереди; return прекращает обработку при ошибке.
-          if (register && !name.trim()) {
-            setError("Укажите имя");
-            return;
-          }
-// ^       — начало строки
-// [^\s@]+ — один или больше символов, кроме пробельных символов и @
-// @       — обязательный символ @
-// [^\s@]+ — один или больше символов, кроме пробельных символов и @
-// \.      — обязательная точка (обратный слеш делает её обычной точкой)
-// [^\s@]+ — один или больше символов, кроме пробельных символов и @
-// $       — конец строки
-// .test(email) — проверяет, соответствует ли email этому выражению
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setError("Введите корректную электронную почту");
-            return;
-          }
-          if (password.length < 8) {
-            setError("Пароль должен содержать не менее 8 символов");
-            return;
-          }
+          setSubmitted(true);
+          if (Object.values(errors).some(Boolean)) return;
           // Передаём данные родителю. Проверки пароля на сервере здесь нет:
           // в режиме входа пока используется демонстрационное имя «Аня».
           onEnter(register ? name.trim() : "Аня", email.trim());
