@@ -2,7 +2,7 @@
 
 Сгенерировано из TypeScript. Включены экспортируемые и внутренние именованные функции, обработчики, компоненты и функции стилей. Анонимные обратные вызовы описываются в составе принимающих их функций.
 
-Функций: 141. Классов: 0. В проекте используются функциональные компоненты React; классов нет.
+Функций: 144. Классов: 0. В проекте используются функциональные компоненты React; классов нет.
 
 ## src/shared/theme/ThemeProvider.tsx
 
@@ -224,6 +224,16 @@ shareInvitation(meeting: Meeting): Promise<ShareAction>
 timeNow(): string
 ```
 
+## src/shared/lib/participants.ts
+
+### validateParticipant
+
+Проверяет имя участника и исключает повторы без учёта регистра.
+
+```typescript
+validateParticipant(name: string, participants?: string[]): "" | "Введите имя участника" | "Имя должно содержать от 2 до 30 символов" | "Допустимы буквы, пробел и дефис; пробелы по краям запрещены" | "Этот участник уже добавлен"
+```
+
 ## src/app/model/usePersistentStore.ts
 
 ### usePersistentStore
@@ -414,7 +424,7 @@ saveProfile(): void
 
 ### inviteParticipant
 
-Добавляет непустое уникальное имя участника в текущую встречу.
+Проверяет формат и уникальность имени, добавляет участника и закрывает приглашение.
 
 ```typescript
 inviteParticipant(): void
@@ -771,7 +781,7 @@ FiltersDialog({ controller, }: { controller: { setDialog: (dialog: DialogName) =
 Показывает поле имени и действия добавления участника или отправки приглашения.
 
 ```typescript
-InviteDialog({ controller, }: { controller: { inviteParticipant: () => void; inviteName: string; setInviteName: (value: string) => void; share: () => void; }; }): React.JSX.Element
+InviteDialog({ controller, }: { controller: { inviteParticipant: () => void; inviteName: string; setInviteName: (value: string) => void; share: () => void; meeting: Meeting; }; }): React.JSX.Element
 ```
 
 ## src/features/manage-participants/ui/ParticipantsDialog.styles.ts
@@ -811,7 +821,17 @@ MeetingActionsDialog({ controller, }: { controller: { selectLeader: () => void; 
 Создаёт стили Auth; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { root: { padding: number; paddingTop: number; }; logo: { fontSize: number; fontWeight: "600"; color: string; marginBottom: number; }; title: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; subtitle: { fontSize: number; lineHeight: number; color: string; marginTop: number; }; backButton: { flexDirection: "row"; gap: number; alignItems: "center"; marginBottom: number; }; backLabel: { color: string; }; logoAccent: { color: string; }; fields: { gap: number; marginTop: number; }; passwordContainer: { position: "relative"; }; passwordInput: { paddingRight: number; }; passwordToggle: { position: "absolute"; right: number; bottom: number; }; passwordToggleLabel: { color: string; fontSize: number; }; error: { color: string; marginTop: number; }; submitButton: { marginTop: number; }; switchButton: { marginTop: number; padding: number; alignItems: "center"; }; switchLabel: { color: string; fontSize: number; }; switchLink: { color: string; }; }
+createStyles(colors: ThemeColors): { root: { padding: number; paddingTop: number; }; logo: { fontSize: number; fontWeight: "600"; color: string; marginBottom: number; }; title: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; subtitle: { fontSize: number; lineHeight: number; color: string; marginTop: number; }; backButton: { flexDirection: "row"; gap: number; alignItems: "center"; marginBottom: number; }; backLabel: { color: string; }; logoAccent: { color: string; }; fields: { gap: number; marginTop: number; }; passwordContainer: { position: "relative"; }; passwordInput: { paddingRight: number; }; passwordHint: { color: string; fontSize: number; lineHeight: number; }; passwordToggle: { position: "absolute"; right: number; bottom: number; }; passwordToggleLabel: { color: string; fontSize: number; }; error: { color: string; marginTop: number; }; submitButton: { marginTop: number; }; switchButton: { marginTop: number; padding: number; alignItems: "center"; }; switchLabel: { color: string; fontSize: number; }; switchLink: { color: string; }; }
+```
+
+## src/pages/auth/model/validation.ts
+
+### validateAuth
+
+Проверяет поля регистрации или входа по правилам MedClinic, не изменяя ввод.
+
+```typescript
+validateAuth(values: AuthValues): { name: string; email: string; password: string; confirmPassword: string; }
 ```
 
 ## src/pages/auth/ui/Auth.tsx
@@ -954,6 +974,16 @@ RestaurantCard({ restaurant: r, onVote, }: { restaurant: Restaurant; onVote: () 
 
 ```typescript
 MeetingDetail({ meeting: m, onVote, onEdit, onManage, onChat, onBook, }: { meeting: Meeting; onVote: (id: string) => void; onEdit: () => void; onManage: () => void; onChat: () => void; onBook: () => void; }): React.JSX.Element
+```
+
+## src/pages/meeting-form/model/validation.ts
+
+### validateMeetingForm
+
+Проверяет поля перед сохранением встречи, разрешая прежнее время редактируемой встречи.
+
+```typescript
+validateMeetingForm(values: FormValues, original?: Meeting, now?: Date): "" | "Введите имя участника" | "Имя должно содержать от 2 до 30 символов" | "Допустимы буквы, пробел и дефис; пробелы по краям запрещены" | "Этот участник уже добавлен" | "Введите название встречи" | "Название должно содержать от 2 до 100 символов" | "Название должно содержать букву или цифру, без переносов строк и управляющих символов" | "Выберите корректные дату и время" | "Дата и время встречи должны быть позже текущего момента" | "Бюджет должен быть от 500 до 5000 ₽ с шагом 100 ₽" | "Выберите кухни из списка без повторов" | "Выберите район из списка" | "Выберите формат встречи из списка"
 ```
 
 ## src/pages/meeting-form/ui/MeetingForm.styles.ts
