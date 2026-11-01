@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Meetly",
+    "slug": "meetly",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.meetly.app"
+    },
+    "android": {
+      "package": "com.meetly.app"
+    },
+    "web": {
+      "name": "Meetly",
+      "bundler": "metro"
+    }
+  }
+}

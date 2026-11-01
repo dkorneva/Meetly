@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+.env
+*.log
+.npm-cache/
+.checks/
+
+.tools/
+coverage/
+docs/api/

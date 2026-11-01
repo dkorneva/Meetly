@@ -1,0 +1,42 @@
+export type Restaurant = {
+  id: string;
+  name: string;
+  cuisine: string;
+  distance: string;
+  price: number;
+  rating: string;
+  tag: string;
+  image: number;
+  phone: string;
+  website: string;
+  vk: string;
+  x: number;
+  y: number;
+};
+export type Meeting = {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  participants: string[];
+  status: "voting" | "selected" | "booked" | "completed";
+  restaurantId?: string;
+  bookedAt?: string;
+  completedAt?: string;
+  votes: Record<string, string>;
+  budget: number;
+  cuisines: string[];
+  district: string;
+  format: string;
+};
+export type Message = {
+  id: string;
+  name: string;
+  text: string;
+  time: string;
+  kind?: "system" | "selected";
+  liked?: boolean;
+  otherLikes?: number;
+  mine?: boolean;
+  attachment?: { name: string; uri: string; image: boolean };
+};
