@@ -12,6 +12,25 @@ beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
+test("переключение разделов оставляет только встречи соответствующего статуса", async () => {
+  const store = makeController().store;
+  const active = { ...store.meetings[0], id: "team", status: "voting" as const };
+  const completed = { ...store.meetings[0], id: "completed", status: "completed" as const };
+  store.meetings = [active, completed];
+  await saveStore(store);
+  const { result } = await renderHook(() => useAppController());
+  await waitFor(() => expect(result.current.loaded).toBe(true));
+
+  expect(result.current.meetingSection).toBe("active");
+  expect(result.current.matchingMeetings).toEqual([active]);
+
+  await act(() => result.current.setMeetingSection("completed"));
+  expect(result.current.matchingMeetings).toEqual([completed]);
+
+  await act(() => result.current.setMeetingSection("active"));
+  expect(result.current.matchingMeetings).toEqual([active]);
+});
+
 test("подтверждение брони завершает встречу и сохраняет её состояние", async () => {
   const store = makeController().store;
   const meeting = store.meetings.find((item) => item.id === "team")!;
@@ -59,6 +78,7 @@ test("отмена брони возвращает завершённую вст
 
 test("отправка сообщения добавляет его только в чат выбранной встречи", async () => {
   const store = makeController().store;
+  store.messages.coffee = [{ id: "other-chat-message", name: "Маша", text: "Другой чат", time: "12:00" }];
   await saveStore(store);
   const { result } = await renderHook(() => useAppController());
   await waitFor(() => expect(result.current.loaded).toBe(true));
@@ -71,7 +91,5 @@ test("отправка сообщения добавляет его только
     ...previous,
     expect.objectContaining({ text: "До встречи!", mine: true, name: store.name.split(" ")[0] }),
   ]);
-  for (const [id, messages] of Object.entries(store.messages)) {
-    if (id !== selected) expect(result.current.store.messages[id]).toEqual(messages);
-  }
+  expect(result.current.store.messages.coffee).toEqual(store.messages.coffee);
 });

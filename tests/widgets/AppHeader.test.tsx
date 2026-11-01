@@ -19,8 +19,8 @@ describe("AppHeader", () => {
     await fireEvent.press(ui.getByRole("button", { name: "more" }));
     expect(c.setDialog).toHaveBeenCalledWith("menu");
   });
-  test("при редактировании показывает отмену вместо меню", async () => {
-    const c = makeController({ screen: "edit" });
+  test.each(["new", "edit"] as const)("на экране %s показывает отмену вместо меню", async (screen) => {
+    const c = makeController({ screen });
     const ui = await render(<AppHeader controller={c} />);
     expect(ui.queryByRole("button", { name: "more" })).toBeNull();
     await fireEvent.press(ui.getByText("Отмена"));

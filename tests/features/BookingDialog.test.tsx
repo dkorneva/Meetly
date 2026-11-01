@@ -4,6 +4,17 @@ import { openExternalLink } from "../../src/shared/api/device";
 import { makeController } from ".././fixtures";
 
 describe("BookingDialog", () => {
+  test("передаёт ссылку ВКонтакте выбранного ресторана", async () => {
+    const c = makeController();
+    c.booking = { ...c.booking, vk: "https://vk.com/meetly_test_restaurant" };
+    const ui = await render(<BookingDialog controller={c} />);
+
+    await fireEvent.press(ui.getByText("ВКонтакте"));
+
+    expect(openExternalLink).toHaveBeenCalledTimes(1);
+    expect(openExternalLink).toHaveBeenCalledWith(c.booking.vk);
+  });
+
   test("передаёт номер ресторана для открытия телефона", async () => {
     const c = makeController();
     const ui = await render(<BookingDialog controller={c} />);
