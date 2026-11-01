@@ -3,6 +3,11 @@ import { MeetingForm } from "../../src/pages/meeting-form";
 import { makeController } from ".././fixtures";
 
 describe("MeetingForm", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 10, 1, 12));
+  });
+  afterEach(() => jest.useRealTimers());
   test("не сохраняет пустое название", async () => {
     const onSave = jest.fn();
     const ui = await render(<MeetingForm onSave={onSave} />);
@@ -17,7 +22,7 @@ describe("MeetingForm", () => {
     await fireEvent.changeText(ui.getByDisplayValue("Ужин с командой"), " Новая встреча ");
     await fireEvent.press(ui.getByText("15"));
     await fireEvent.press(ui.getByRole("button", { name: "Создать встречу" }));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ title: "Новая встреча", date: "2026-09-15", status: "voting", votes: {} }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ title: "Новая встреча", date: "2026-11-15", status: "voting", votes: {} }));
   });
   test("передаёт изменённое название, сохраняя id и результаты голосования", async () => {
     const c = makeController(), onSave = jest.fn();
@@ -39,8 +44,9 @@ describe("MeetingForm", () => {
     const onSave = jest.fn();
     const ui = await render(<MeetingForm onSave={onSave} />);
     await fireEvent.press(ui.getByText("Пригласить"));
-    await fireEvent.changeText(ui.getByPlaceholderText("Имя участника"), " Полина ");
+    await fireEvent.changeText(ui.getByPlaceholderText("Имя участника"), "полина");
     await fireEvent.press(ui.getByRole("button", { name: "Добавить" }));
+    expect(ui.getByText("Этот участник уже добавлен")).toBeOnTheScreen();
     await fireEvent.press(ui.getByRole("button", { name: "Создать встречу" }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ participants: ["Аня", "Полина", "Маша", "Илья"] }));
   });

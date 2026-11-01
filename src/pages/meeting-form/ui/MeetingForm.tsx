@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, View } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useState } from "react";
+import { cuisineOptions, districtOptions, formatOptions, validateMeetingForm, validateParticipant } from "../model/validation";
 import {
   Avatars,
   Button,
@@ -41,9 +42,9 @@ export default function MeetingForm({
   // ?. читает свойство, если встреча есть; ?? подставляет значение, если его нет.
   // useState хранит изменения формы до нажатия кнопки сохранения.
   const [title, setTitle] = useState(meeting?.title ?? "Ужин с командой");
-  const date = meeting
+  const [date] = useState(() => meeting
     ? new Date(meeting.date + "T12:00:00")
-    : new Date(2026, 8, 25); // Начальная дата новой встречи; месяцы в Date считаются с нуля.
+    : new Date());
   const [month, setMonth] = useState(date.getMonth());
   const [year, setYear] = useState(date.getFullYear());
   const [day, setDay] = useState(date.getDate());
@@ -52,6 +53,7 @@ export default function MeetingForm({
   );
   const [inviteOpen, setInviteOpen] = useState(false); // Видно ли поле добавления участника.
   const [participant, setParticipant] = useState("");
+  const [participantError, setParticipantError] = useState("");
   const [time, setTime] = useState(meeting?.time ?? "19:00");
   const [timeOpen, setTimeOpen] = useState(false); // Раскрыт ли выбор времени.
   const [budget, setBudget] = useState(meeting?.budget ?? 1500);
@@ -91,6 +93,7 @@ export default function MeetingForm({
         <Text style={uiStyles.label}>Дата и время</Text>
         <Row>
           <Pressable
+            accessibilityLabel="Предыдущий месяц"
             onPress={() => shift(-1)}
             style={styles.previousMonthButton}
           >
@@ -102,7 +105,7 @@ export default function MeetingForm({
               year: "numeric",
             })}
           </Text>
-          <Pressable onPress={() => shift(1)} style={styles.nextMonthButton}>
+          <Pressable accessibilityLabel="Следующий месяц" onPress={() => shift(1)} style={styles.nextMonthButton}>
             <Icon name="chevron" color={colors.textSecondary} size={18} />
           </Pressable>
         </Row>
@@ -186,16 +189,20 @@ export default function MeetingForm({
             <Field
               placeholder="Имя участника"
               value={participant}
-              onChangeText={setParticipant}
+              onChangeText={(value) => {
+                setParticipant(value);
+                setParticipantError("");
+              }}
             />
+            {!!participantError && <Text style={styles.error}>{participantError}</Text>}
             <Button
               title="Добавить"
               onPress={() => {
-                const name = participant.trim();
-                // Добавляем только непустое имя, которого ещё нет в списке.
-                if (name && !participants.includes(name)) {
+                const error = validateParticipant(participant, participants);
+                setParticipantError(error);
+                if (!error) {
                   // Создаём новый массив, сохранив прежних участников.
-                  setParticipants([...participants, name]);
+                  setParticipants([...participants, participant]);
                   setParticipant("");
                   setInviteOpen(false);
                 }
@@ -229,14 +236,7 @@ export default function MeetingForm({
       <View style={uiStyles.section}>
         <Text style={uiStyles.label}>Кухня</Text>
         <View style={styles.wrap}>
-          {[
-            "Итальянская",
-            "Японская",
-            "Русская",
-            "Кофе",
-            "Бар",
-            "Вегетарианская",
-          ].map((t) => (
+          {cuisineOptions.map((t) => (
             <Chip
               key={t}
               label={t}
@@ -264,7 +264,7 @@ export default function MeetingForm({
         </Pressable>
         {districtOpen && (
           <View style={styles.wrap}>
-            {["Центр", "Арбат", "Тверской", "Патриаршие", "Не важно"].map(
+            {districtOptions.map(
               (t) => (
                 <Chip
                   key={t}
@@ -283,7 +283,7 @@ export default function MeetingForm({
       <View style={[uiStyles.section, styles.formatSection]}>
         <Text style={uiStyles.label}>Формат</Text>
         <View style={styles.formatSelector}>
-          {["В помещении", "На улице", "Не важно"].map((t) => (
+          {formatOptions.map((t) => (
             <Pressable
               key={t}
               onPress={() => setFormat(t)}
@@ -308,20 +308,17 @@ export default function MeetingForm({
       <Button
         title={meeting ? "Сохранить предпочтения" : "Создать встречу"}
         onPress={() => {
-          // Не сохраняем встречу без названия.
-          if (!title.trim()) {
-            setError("Введите название встречи");
-            return;
-          }
+          const selectedDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const error = validateMeetingForm({ title, date: selectedDate, time, participants, budget, cuisines, district, format }, meeting);
+          setError(error);
+          if (error) return;
           // Собираем объект встречи из полей и передаём его родителю для сохранения.
           onSave({
             // При редактировании оставляем id, для новой встречи создаём его из времени.
             id: meeting?.id ?? Date.now().toString(),
             title: title.trim(),
             // Формат YYYY-MM-DD: padStart дополняет месяц и день нулём до двух цифр.
-            date: `${year}-${String(month + 1).padStart(2, "0")}-${String(
-              day,
-            ).padStart(2, "0")}`,
+            date: selectedDate,
             time,
             participants,
             // Сохраняем прежний статус и результаты; новая встреча начинает с голосования.
