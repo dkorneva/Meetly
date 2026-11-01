@@ -1,6 +1,9 @@
 
 
-import { Text } from "../../../shared/theme/index";
+import { useState } from "react";
+import type { Meeting } from "../../../entities/meeting";
+import { validateParticipant } from "../../../shared/lib/participants";
+import { Text, useTheme } from "../../../shared/theme/index";
 import { Button, Field } from "../../../shared/ui/controls/index";
 import { useUiStyles } from "../../../shared/ui/shared.styles";
 
@@ -18,11 +21,15 @@ export default function InviteDialog({
     inviteName: string;
     setInviteName: (value: string) => void;
     share: () => void;
+    meeting: Meeting;
   };
 }) {
   const uiStyles = useUiStyles();
+  const { colors } = useTheme();
+  const [attempted, setAttempted] = useState(false);
 
-  const { inviteParticipant, inviteName, setInviteName, share } = controller;
+  const { inviteParticipant, inviteName, setInviteName, share, meeting } = controller;
+  const error = validateParticipant(inviteName, meeting.participants);
   return (
     <>
       <Text style={uiStyles.muted}>
@@ -34,7 +41,11 @@ export default function InviteDialog({
         onChangeText={setInviteName}
         placeholder="Например, Саша"
       />
-      <Button title="Добавить участника" onPress={inviteParticipant} />
+      {attempted && !!error && <Text accessibilityRole="alert" style={{ color: colors.accentText }}>{error}</Text>}
+      <Button title="Добавить участника" onPress={() => {
+        setAttempted(true);
+        if (!error) inviteParticipant();
+      }} />
       <Button title="Поделиться приглашением" variant="outline" onPress={share} />
     </>
   );

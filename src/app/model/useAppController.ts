@@ -16,6 +16,7 @@ chooseAvatar,
 
 } from "../../shared/api/device";
 import { timeNow } from "../../shared/lib/time";
+import { validateParticipant } from "../../shared/lib/participants";
 import type { Screen } from "../../shared/config/screens";
 import type { DialogName } from "../../shared/config/dialogs";
 import type { Store } from "../../entities/meeting";
@@ -469,22 +470,19 @@ export function useAppController() {
   // В текущем прототипе это локальное добавление имени, без отправки приглашения другому человеку.
   
   /**
-   * Добавляет непустое уникальное имя участника в текущую встречу.
+   * Проверяет формат и уникальность имени, добавляет участника и закрывает приглашение.
    *
    * @returns Результат операции; для обработчиков без результата — void.
    */
   const inviteParticipant = () => {
-    if (!inviteName.trim()) {
-      showToast("error", "Введите имя участника");
-      return;
-    }
-    if (meeting.participants.includes(inviteName.trim())) {
-      showToast("info", "Этот участник уже добавлен");
+    const error = validateParticipant(inviteName, meeting.participants);
+    if (error) {
+      showToast("error", error);
       return;
     }
     updateMeeting((m) => ({
       ...m,
-      participants: [...m.participants, inviteName.trim()],
+      participants: [...m.participants, inviteName],
     }));
     setInviteName("");
     setDialog(null);
