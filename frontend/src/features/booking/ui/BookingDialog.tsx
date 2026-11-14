@@ -7,7 +7,6 @@ import { Text, useThemedStyles } from "../../../shared/theme/index";
 import { Button, Row } from "../../../shared/ui/controls/index";
 import { createStyles } from "./BookingDialog.styles";
 
-
 /**
  * Показывает контакты ресторана и доступные действия подтверждения или отмены локальной брони.
  *
@@ -30,7 +29,7 @@ export default function BookingDialog({
   // createStyles и цвета не изменились. При смене темы стили создаются заново.
   const styles = useThemedStyles(createStyles);
 
-  // деструктуризация 
+  // деструктуризация
   const {
     confirmCurrentBooking,
     booking,
@@ -45,7 +44,7 @@ export default function BookingDialog({
         <View style={styles.restaurantInfo}>
           <Text style={styles.restaurantName}>{booking.name}</Text>
           <Text style={styles.restaurantDescription}>
-            {booking.cuisine} кухня · Центр Москвы
+            {booking.address || "Адрес не указан"}
           </Text>
         </View>
       </Row>
@@ -53,8 +52,8 @@ export default function BookingDialog({
         {[
           {
             label: "Телефон",
-            value: "+7 (495) 123-45-67",
-            url: `tel:${booking.phone}`,
+            value: booking.phone,
+            url: booking.phone ? `tel:${booking.phone}` : "",
           },
           {
             label: "Сайт",
@@ -68,7 +67,8 @@ export default function BookingDialog({
           },
         ]
           .filter((x) => x.url) // оставить только те объекты, у которых есть url
-          .map((item, i) => ( // превратить объект в кликабельный элемент интерфейса
+          .map((item, i) => (
+            // превратить объект в кликабельный элемент интерфейса
             <Pressable
               key={item.label} // key помогает React различать элементы списка при обновлениях
               onPress={() =>
@@ -88,11 +88,27 @@ export default function BookingDialog({
       </View>
       <Button
         title="Позвонить"
+        disabled={!booking.phone}
         variant="accent"
         onPress={() =>
-          openExternalLink(`tel:${booking.phone}`).catch(() =>
-            showToast("info", "Звонок доступен на телефоне"), // тост показывается, если после нажатия «Позвонить» не удалось открыть адрес tel:номер
+          openExternalLink(`tel:${booking.phone}`).catch(
+            () => showToast("info", "Звонок доступен на телефоне"), // тост показывается, если после нажатия «Позвонить» не удалось открыть адрес tel:номер
           )
+        }
+      />
+      {!booking.phone && (
+        <Text>
+          Телефон не указан в источнике. Уточните контакты на сайте заведения
+          или в Яндекс Картах.
+        </Text>
+      )}
+      <Button
+        title="Открыть в Яндекс Картах"
+        variant="outline"
+        onPress={() =>
+          openExternalLink(
+            `https://yandex.ru/maps/?pt=${booking.longitude},${booking.latitude}&z=17`,
+          ).catch(() => showToast("error", "Не удалось открыть карту"))
         }
       />
       {meeting.status !== "completed" && (
