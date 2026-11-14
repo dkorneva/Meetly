@@ -1,23 +1,18 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Prisma, PrismaClient } from "@prisma/client";
 /**
- * Prisma-клиент SQL Server с жизненным циклом NestJS и повтором конфликтующих транзакций.
+ * Prisma-клиент SQL Server: подключение, отключение и повтор конфликтующих транзакций.
  */
-@Injectable()
-export class Database
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
-{
+export class Database extends PrismaClient {
   /**
    * Открывает соединение с БД при инициализации сервера.
    */
-  async onModuleInit() {
+  async connect() {
     await this.$connect();
   }
   /**
    * Закрывает соединения Prisma при завершении сервера.
    */
-  async onModuleDestroy() {
+  async disconnect() {
     await this.$disconnect();
   }
   /**

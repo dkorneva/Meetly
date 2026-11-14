@@ -1,9 +1,5 @@
 import { HIDDEN_BOOKING_NOTICE } from "../domain/chat";
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestError, NotFoundError } from "../http/errors";
 import { Database } from "../infrastructure/database";
 import { MeetingsService } from "./meetings.service";
 import { MessageInput } from "./inputs";
@@ -11,7 +7,6 @@ import { FilesService } from "./files.service";
 /**
  * Проверяет права на переписку, сохраняет сообщения и реакции, выдаёт страницы истории.
  */
-@Injectable()
 export class ChatService {
   constructor(
     private readonly db: Database,
@@ -33,7 +28,7 @@ export class ChatService {
         where: { id: before, meetingId: id },
       }))
     )
-      throw new BadRequestException("Некорректный курсор");
+      throw new BadRequestError("Некорректный курсор");
     const items = await this.db.message.findMany({
       where: { meetingId: id, NOT:{kind:"system",text:HIDDEN_BOOKING_NOTICE} },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -85,14 +80,14 @@ export class ChatService {
     return this.db.atomic(async (tx) => {
       await this.meetings.member(userId, id, tx);
       if (!input.text.trim() && !input.fileId)
-        throw new BadRequestException("Пустое сообщение");
+        throw new BadRequestError("Пустое сообщение");
       if (
         input.fileId &&
         !(await tx.file.findFirst({
           where: { id: input.fileId, ownerId: userId, meetingId: id },
         }))
       )
-        throw new BadRequestException("Вложение не принадлежит этому чату");
+        throw new BadRequestError("Вложение не принадлежит этому чату");
       return tx.message.create({
         data: {
           meetingId: id,
@@ -118,7 +113,7 @@ export class ChatService {
           where: { id, meetingId, kind: "text" },
         }))
       )
-        throw new NotFoundException("Сообщение не найдено");
+        throw new NotFoundError("Сообщение не найдено");
       if (liked)
         await tx.reaction.upsert({
           where: { messageId_userId: { messageId: id, userId } },

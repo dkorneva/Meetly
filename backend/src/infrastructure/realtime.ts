@@ -1,18 +1,17 @@
-import { Injectable } from "@nestjs/common";
-import {
-  WebSocketGateway,
-  WebSocketServer,
-  OnGatewayConnection,
-} from "@nestjs/websockets";
+
 import { Server, Socket } from "socket.io";
 import { AuthService } from "../application/auth.service";
 import { Database } from "./database";
 /** Каждое устройство подписано только на личную комнату пользователя.
  * Получателей определяем из актуального состава встречи, поэтому исключённый участник не получает события. */
-@Injectable()
-@WebSocketGateway({ cors: { origin: false }, maxHttpBufferSize: 16384 })
-export class Realtime implements OnGatewayConnection {
-  @WebSocketServer() server!: Server;
+export class Realtime {
+  private server?: Server;
+
+  /** Сервер Socket.IO подключается явно к тому же HTTP-серверу. */
+  attach(server: Server) {
+    this.server = server;
+    server.on("connection", (socket) => { void this.handleConnection(socket); });
+  }
   constructor(
     private readonly auth: AuthService,
     private readonly db: Database,

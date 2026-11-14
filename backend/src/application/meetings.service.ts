@@ -1,10 +1,5 @@
 import { HIDDEN_BOOKING_NOTICE } from "../domain/chat";
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../http/errors";
 import { Prisma } from "@prisma/client";
 import { Database } from "../infrastructure/database";
 import { catalogAvailable, CATALOG_WHERE } from "./restaurants.service";
@@ -24,7 +19,6 @@ import {
 /**
  * Выполняет действия со встречами в транзакциях, проверяя участие, полномочия организатора и статус голосования.
  */
-@Injectable()
 export class MeetingsService {
   constructor(private readonly db: Database) {}
   /**
@@ -34,15 +28,15 @@ export class MeetingsService {
    */
   private async requireAvailable(id: string, tx: Prisma.TransactionClient) {
     const r = await tx.restaurant.findUnique({ where: { id }, select: { catalogArea: true, catalogActive: true } });
-    if (!r) throw new NotFoundException("Заведение не найдено");
-    if (!catalogAvailable(r)) throw new BadRequestException("Заведение отсутствует в каталоге ресторанов внутри Садового кольца");
+    if (!r) throw new NotFoundError("Заведение не найдено");
+    if (!catalogAvailable(r)) throw new BadRequestError("Заведение отсутствует в каталоге ресторанов внутри Садового кольца");
   }
   /**
    * Проверяет членство пользователя во встрече и возвращает её запись.
    * @param userId ID текущего аутентифицированного пользователя.
    * @param id ID запрашиваемой записи.
    * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
-   * @throws ForbiddenException для постороннего пользователя; NotFoundException для отсутствующей встречи.
+   * @throws ForbiddenError для постороннего пользователя; NotFoundError для отсутствующей встречи.
    * @returns Запись встречи после проверки участия.
    */
   async member(
@@ -53,9 +47,9 @@ export class MeetingsService {
     const member = await tx.member.findUnique({
       where: { meetingId_userId: { meetingId: id, userId } },
     });
-    if (!member) throw new ForbiddenException("Вы не участник встречи");
+    if (!member) throw new ForbiddenError("Вы не участник встречи");
     const meeting = await tx.meeting.findUnique({ where: { id } });
-    if (!meeting) throw new NotFoundException("Встреча не найдена");
+    if (!meeting) throw new NotFoundError("Встреча не найдена");
     return meeting;
   }
   /**
@@ -63,7 +57,7 @@ export class MeetingsService {
    * @param userId ID текущего аутентифицированного пользователя.
    * @param id ID запрашиваемой записи.
    * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
-   * @throws ForbiddenException для участника без прав организатора.
+   * @throws ForbiddenError для участника без прав организатора.
    * @returns Запись встречи после проверки полномочий организатора.
    */
   async owner(
@@ -73,7 +67,7 @@ export class MeetingsService {
   ) {
     const meeting = await this.member(userId, id, tx);
     if (meeting.ownerId !== userId)
-      throw new ForbiddenException("Действие доступно организатору");
+      throw new ForbiddenError("Действие доступно организатору");
     return meeting;
   }
   /**
@@ -133,7 +127,7 @@ export class MeetingsService {
   async create(userId: string, input: MeetingInput) {
     const startsAt = meetingInstant(input.date, input.time);
     if (startsAt <= new Date())
-      throw new BadRequestException("Встреча должна быть в будущем");
+      throw new BadRequestError("Встреча должна быть в будущем");
     return this.db.atomic(async (tx) => {
       const meeting = await tx.meeting.create({
         data: {
@@ -177,7 +171,7 @@ export class MeetingsService {
         startsAt.getTime() !== meeting.startsAt.getTime() &&
         startsAt <= new Date()
       )
-        throw new BadRequestException("Встреча должна быть в будущем");
+        throw new BadRequestError("Встреча должна быть в будущем");
       await tx.member.update({
         where: { meetingId_userId: { meetingId: id, userId } },
         data: {
@@ -250,7 +244,7 @@ export class MeetingsService {
           where: { meetingId: id, restaurantId, origin: { not: "excluded" } },
         }))
       )
-        throw new BadRequestException("Сначала предложите заведение");
+        throw new BadRequestError("Сначала предложите заведение");
       return tx.vote.upsert({
         where: { meetingId_userId: { meetingId: id, userId } },
         create: { meetingId: id, userId, restaurantId },
@@ -269,7 +263,7 @@ export class MeetingsService {
       const meeting = await this.owner(userId, id, tx);
       requireVoting(meeting.status);
       const candidate = await tx.candidate.findUnique({ where: { meetingId_restaurantId: { meetingId: id, restaurantId } } });
-      if (!candidate) throw new NotFoundException("Вариант не найден");
+      if (!candidate) throw new NotFoundError("Вариант не найден");
       await tx.vote.deleteMany({ where: { meetingId: id, restaurantId } });
       // Keep an exclusion so automatic recommendations cannot silently restore it.
       await tx.candidate.update({ where: { meetingId_restaurantId: { meetingId: id, restaurantId } }, data: { origin: "excluded" } });
@@ -324,7 +318,7 @@ export class MeetingsService {
       const m = await this.owner(userId, id, tx);
       if (cancel) {
         if (m.status !== "completed")
-          throw new BadRequestException("Нет подтверждённой брони");
+          throw new BadRequestError("Нет подтверждённой брони");
         return tx.meeting.update({
           where: { id },
           data: {
@@ -338,13 +332,13 @@ export class MeetingsService {
       if (m.status === "completed" && m.restaurantId === restaurantId) return m;
       await this.requireAvailable(restaurantId, tx);
       if (m.status === "completed")
-        throw new BadRequestException("Сначала отмените предыдущую бронь");
+        throw new BadRequestError("Сначала отмените предыдущую бронь");
       const winner =
         m.status === "voting"
           ? chooseWinner(await tx.vote.findMany({ where: { meetingId: id, candidate: { restaurant: { ...CATALOG_WHERE } } } }))
           : m.restaurantId;
       if (winner !== restaurantId)
-        throw new BadRequestException(
+        throw new BadRequestError(
           "Можно подтвердить бронь выбранного участниками места",
         );
       if (m.status === "voting") await this.selectionMessage(tx, userId, m, restaurantId);
@@ -375,7 +369,7 @@ export class MeetingsService {
         where: { email: email.trim().toLowerCase() },
       });
       if (!user)
-        throw new NotFoundException(
+        throw new NotFoundError(
           "Аккаунт с такой почтой не найден. Отправьте ссылку приглашения",
         );
       return tx.member.upsert({
@@ -396,7 +390,7 @@ export class MeetingsService {
       const m = await this.owner(userId, id, tx);
       requireVoting(m.status);
       if (m.ownerId === target)
-        throw new BadRequestException("Организатора удалить нельзя");
+        throw new BadRequestError("Организатора удалить нельзя");
       await tx.vote.deleteMany({ where: { meetingId: id, userId: target } });
       await tx.member.deleteMany({ where: { meetingId: id, userId: target } });
       return { ok: true };
@@ -430,7 +424,7 @@ export class MeetingsService {
         where: { tokenHash: tokenHash(token) },
       });
       if (!invite || invite.revoked || invite.expiresAt < new Date())
-        throw new BadRequestException("Приглашение истекло или отозвано");
+        throw new BadRequestError("Приглашение истекло или отозвано");
       const m = await tx.meeting.findUniqueOrThrow({
         where: { id: invite.meetingId },
       });

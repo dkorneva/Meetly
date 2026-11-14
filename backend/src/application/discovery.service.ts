@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+
 import { Database } from "../infrastructure/database";
 import { MeetingsService } from "./meetings.service";
 import { RestaurantsService } from "./restaurants.service";
@@ -14,7 +14,6 @@ export interface PlaceFilters {
 /**
  * Подбирает заведения из SQL-каталога по предпочтениям участников; внешние источники при подборе не вызываются.
  */
-@Injectable()
 export class DiscoveryService {
   constructor(
     private readonly db: Database,

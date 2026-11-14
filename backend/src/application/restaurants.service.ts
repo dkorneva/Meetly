@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { NotFoundError } from "../http/errors";
 import { Prisma } from "@prisma/client";
 import OpeningHours from "opening_hours";
 import { Database } from "../infrastructure/database";
@@ -12,7 +12,6 @@ export const catalogAvailable = (r: { catalogArea: string | null; catalogActive:
 /**
  * Предоставляет активный локальный каталог, его фильтры и сведения о заведениях.
  */
-@Injectable()
 export class RestaurantsService {
   constructor(private readonly db: Database) {}
   /**
@@ -91,7 +90,7 @@ export class RestaurantsService {
    */
   async details(id:string) {
     const r=await this.db.restaurant.findUnique({where:{id}});
-    if(!r)throw new NotFoundException("Заведение не найдено");
+    if(!r)throw new NotFoundError("Заведение не найдено");
     return this.view(r);
   }
 }

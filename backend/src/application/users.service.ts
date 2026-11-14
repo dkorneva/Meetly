@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { BadRequestError } from "../http/errors";
 import { Database } from "../infrastructure/database";
 import { FilesService } from "./files.service";
 export interface ProfileInput {
@@ -6,12 +6,11 @@ export interface ProfileInput {
   email?: string;
   dark?: boolean;
   calendar?: boolean;
-  avatarId?: string;
+  avatarId?: string | null;
 }
 /**
  * Читает и изменяет профиль без раскрытия хеша пароля и служебных полей аккаунта.
  */
-@Injectable()
 export class UsersService {
   constructor(
     private readonly db: Database,
@@ -58,7 +57,7 @@ export class UsersService {
         },
       }))
     )
-      throw new BadRequestException("Некорректный аватар");
+      throw new BadRequestError("Некорректный аватар");
     await this.db.user.update({
       where: { id },
       data: {

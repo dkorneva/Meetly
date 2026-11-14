@@ -1,7 +1,6 @@
-import { Injectable, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
+import { NotFoundError, ServiceUnavailableError } from "../http/errors";
 
 /** Geoapify hosts OSM tiles independently of the public OSM volunteer servers. */
-@Injectable()
 export class MapTiles {
   private readonly cache = new Map<string, { body: Buffer; expires: number }>();
   private readonly pending = new Map<string, Promise<Buffer>>();
@@ -16,14 +15,14 @@ export class MapTiles {
   async get(z: string, x: string, y: string): Promise<Buffer> {
     if (![z, x, y].every(v => /^\d{1,6}$/.test(v)) || Number(z) > 19 ||
       Number(x) >= 2 ** Number(z) || Number(y) >= 2 ** Number(z))
-      throw new NotFoundException("Тайл не найден");
+      throw new NotFoundError("Тайл не найден");
     const key = `${z}/${x}/${y}`;
     const cached = this.cache.get(key);
     if (cached && cached.expires > Date.now()) return cached.body;
     const running = this.pending.get(key);
     if (running) return running;
     if (!process.env.GEOAPIFY_API_KEY || this.pending.size >= 128)
-      throw new ServiceUnavailableException("Фон карты временно недоступен");
+      throw new ServiceUnavailableError("Фон карты временно недоступен");
     const task = this.load(key);
     this.pending.set(key, task);
     try { return await task; } finally { this.pending.delete(key); }
@@ -52,7 +51,7 @@ export class MapTiles {
       return body;
     } catch {
       // Never return upstream credentials, error bodies or a fake tile to the client.
-      throw new ServiceUnavailableException("Фон карты временно недоступен");
+      throw new ServiceUnavailableError("Фон карты временно недоступен");
     }
   }
 }

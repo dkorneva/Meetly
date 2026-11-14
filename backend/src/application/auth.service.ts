@@ -1,9 +1,5 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import { ConflictError, UnauthorizedError } from "../http/errors";
+import { Tokens } from "../infrastructure/tokens";
 import { createHash, randomBytes } from "node:crypto";
 import * as argon2 from "argon2";
 import { Database } from "../infrastructure/database";
@@ -16,22 +12,21 @@ export const tokenHash = (token: string) =>
 /**
  * Управляет аккаунтами и серверными сессиями. Пароли хешируются Argon2, refresh-токены сохраняются только в виде SHA-256.
  */
-@Injectable()
 export class AuthService {
   constructor(
     private readonly db: Database,
-    private readonly jwt: JwtService,
+    private readonly jwt: Tokens,
   ) {}
   /**
    * Нормализует email, создаёт аккаунт с хешем пароля и выдаёт первую сессию.
    * @param input Данные операции после проверки HTTP-слоем.
-   * @throws ConflictException, если email уже занят.
+   * @throws ConflictError, если email уже занят.
    * @returns Пара accessToken/refreshToken новой сессии.
    */
   async register(input: RegisterInput) {
     const email = input.email.trim().toLowerCase();
     if (await this.db.user.findUnique({ where: { email } }))
-      throw new ConflictException("Этот email уже зарегистрирован");
+      throw new ConflictError("Этот email уже зарегистрирован");
     const user = await this.db.user.create({
       data: {
         email,
@@ -44,7 +39,7 @@ export class AuthService {
   /**
    * Проверяет пароль аккаунта и выдаёт новую независимую сессию.
    * @param input Данные операции после проверки HTTP-слоем.
-   * @throws UnauthorizedException при неверной паре email/пароль.
+   * @throws UnauthorizedError при неверной паре email/пароль.
    * @returns Пара токенов новой сессии.
    */
   async login(input: LoginInput) {
@@ -52,7 +47,7 @@ export class AuthService {
       where: { email: input.email.trim().toLowerCase() },
     });
     if (!user || !(await argon2.verify(user.passwordHash, input.password)))
-      throw new UnauthorizedException("Неверная почта или пароль");
+      throw new UnauthorizedError("Неверная почта или пароль");
     return this.issue(user.id);
   }
   /**
@@ -70,9 +65,9 @@ export class AuthService {
       },
     });
     return {
-      accessToken: await this.jwt.signAsync(
+      accessToken: await this.jwt.sign(
         { sub: userId, sid: session.id, kind: "access" },
-        { expiresIn: "15m" },
+        15 * 60,
       ),
       refreshToken,
     };
@@ -80,7 +75,7 @@ export class AuthService {
   /**
    * Однократно потребляет действующий refresh-токен и заменяет сессию. При конкурентных запросах продолжить может только один.
    * @param token Токен клиента; не записывается в журнал.
-   * @throws UnauthorizedException для истёкшего, отозванного или уже потреблённого токена.
+   * @throws UnauthorizedError для истёкшего, отозванного или уже потреблённого токена.
    * @returns Токены замещающей сессии; прежняя сессия отозвана.
    */
   async refresh(token: string) {
@@ -88,13 +83,13 @@ export class AuthService {
       where: { tokenHash: tokenHash(token) },
     });
     if (!session || session.expiresAt < new Date())
-      throw new UnauthorizedException("Сессия истекла");
+      throw new UnauthorizedError("Сессия истекла");
     // deleteMany атомарно потребляет токен: два параллельных refresh не создадут две сессии.
     const consumed = await this.db.session.deleteMany({
       where: { id: session.id },
     });
     if (!consumed.count)
-      throw new UnauthorizedException("Токен уже использован");
+      throw new UnauthorizedError("Токен уже использован");
     return this.issue(session.userId);
   }
   /**
@@ -111,12 +106,12 @@ export class AuthService {
   /**
    * Проверяет подпись, назначение access-токена и наличие неистёкшей серверной сессии; возвращает ID пользователя.
    * @param token Токен клиента; не записывается в журнал.
-   * @throws UnauthorizedException, если JWT или серверная сессия недействительны.
+   * @throws UnauthorizedError, если JWT или серверная сессия недействительны.
    * @returns ID пользователя, чей JWT и серверная сессия действительны.
    */
   async identify(token: string): Promise<string> {
     try {
-      const payload = await this.jwt.verifyAsync(token);
+      const payload = await this.jwt.verify(token);
       if (payload.kind !== "access" || typeof payload.sub !== "string")
         throw new Error();
       if (
@@ -133,7 +128,7 @@ export class AuthService {
         throw new Error();
       return payload.sub;
     } catch {
-      throw new UnauthorizedException("Войдите в аккаунт");
+      throw new UnauthorizedError("Войдите в аккаунт");
     }
   }
 }
