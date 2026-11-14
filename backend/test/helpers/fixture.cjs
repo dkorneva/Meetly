@@ -1,12 +1,11 @@
 require('dotenv/config');
 const request=require('supertest');
 const {createApp}=require('../../dist/main');
-const {Database}=require('../../dist/infrastructure/database');
 
 /** Creates isolated users/meetings and deletes only records owned by this fixture. */
 async function fixture(t) {
-  const app=await createApp();await app.init();
-  const db=app.get(Database),http=request(app.getHttpServer());
+  const app=await createApp();
+  const db=app.services.db,http=request(app.server);
   const users=[],meetings=[];
   t.after(async()=>{
     try {

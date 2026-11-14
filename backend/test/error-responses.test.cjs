@@ -1,13 +1,12 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {Prisma}=require('@prisma/client');
-const {ErrorFilter}=require('../dist/http/error.filter');
+const {errorResponse}=require('../dist/http/error-handler');
 const {RuleViolation}=require('../dist/domain/meeting-rules');
 
 function responseFor(error) {
-  const filter=new ErrorFilter();filter.logger={error:()=>{}};
-  const result={};const response={status(code){result.status=code;return this;},json(body){result.body=body;return this;}};
-  filter.catch(error,{switchToHttp:()=>({getResponse:()=>response})});return result;
+  const body = errorResponse(error);
+  return {status: body.statusCode, body};
 }
 
 test('database conflicts and missing records have stable public HTTP responses',()=>{

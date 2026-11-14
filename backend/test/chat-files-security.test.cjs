@@ -2,7 +2,6 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {randomUUID}=require('node:crypto');
 const {fixture}=require('./helpers/fixture.cjs');
-const {JwtService}=require('@nestjs/jwt');
 const {HIDDEN_BOOKING_NOTICE}=require('../dist/domain/chat');
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGmQAAAAASUVORK5CYII=','base64');
 
@@ -53,7 +52,7 @@ test('Chat pagination and file access enforce meeting boundaries',async t=>{
     await f.http.get(signed.pathname+signed.search).expect(200).expect('Cache-Control','private, no-store');
     await f.http.get(`/api/files/${avatar.id}`).query({token:signed.searchParams.get('token')}).expect(403);
     await f.http.get(`/api/files/${attachment.id}`).query({token:owner.accessToken}).expect(403);
-    const expired=await f.app.get(JwtService).signAsync({sub:owner.id,fileId:attachment.id,kind:'file'},{expiresIn:-1});
+    const expired=await f.app.services.tokens.sign({sub:owner.id,fileId:attachment.id,kind:'file'},-1);
     await f.http.get(`/api/files/${attachment.id}`).query({token:expired}).expect(403);
   });
   await t.test('messages cannot reuse avatars or attachments from another meeting',async()=>{

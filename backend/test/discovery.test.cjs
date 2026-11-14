@@ -5,7 +5,6 @@ const fs=require('node:fs');
 const {join}=require('node:path');
 const request=require('supertest');
 const {createApp}=require('../dist/main');
-const {Database}=require('../dist/infrastructure/database');
 const {inside,matchPrice}=require('../scripts/lib/osm-catalog.cjs');
 
 const hasImportSnapshots=['osm/garden-ring.geojson','osm/restaurants.json','osm/selected-restaurants.json','imports/restorating.json'].every(file=>fs.existsSync(join(__dirname,'../catalog',file)));
@@ -26,7 +25,7 @@ test('Снимок: 200 полных записей из OSM, внутри ре�
 });
 
 test('HTTP и SQL: весь каталог без встречи, фильтры бюджета и кухни, отсутствие внешнего поиска, сохранность голосов',async()=>{
-  const app=await createApp();await app.init();const db=app.get(Database),http=request(app.getHttpServer());
+  const app=await createApp();const db=app.services.db,http=request(app.server);
   let userId,meetingId;const originalFetch=global.fetch;
   global.fetch=async()=>{throw Error('Внешняя сеть запрещена в этом тесте')};
   try{

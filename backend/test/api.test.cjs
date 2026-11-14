@@ -3,12 +3,11 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const request = require("supertest");
 const { createApp } = require("../dist/main");
-const { Database } = require("../dist/infrastructure/database");
 test("Настоящий HTTP API и SQL Server: аккаунты, права, встреча, голоса, чат, файлы, ICS, бронь", async () => {
   const app = await createApp();
   await app.listen(0, "127.0.0.1");
-  const db = app.get(Database);
-  const http = request(app.getHttpServer());
+  const db = app.services.db;
+  const http = request(app.server);
   const sockets = [];
   const suffix = Date.now();
   const emails = [
@@ -42,7 +41,7 @@ test("Настоящий HTTP API и SQL Server: аккаунты, права, �
     const auth = (r, u = owner) => r.auth(u.accessToken, { type: "bearer" });
     const { io } = require("socket.io-client");
     const { once } = require("node:events");
-    const endpoint = `http://127.0.0.1:${app.getHttpServer().address().port}`;
+    const endpoint = `http://127.0.0.1:${app.server.address().port}`;
     for (const user of [owner, outsider]) {
       const s = io(endpoint, {
         auth: { token: user.accessToken },

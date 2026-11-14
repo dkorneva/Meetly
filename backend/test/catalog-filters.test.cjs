@@ -3,12 +3,11 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const request=require('supertest');
 const {createApp}=require('../dist/main');
-const {Database}=require('../dist/infrastructure/database');
 const {cuisineCodes}=require('../dist/domain/places');
 
 test('HTTP: filters cover every stored cuisine and price; meeting preferences accept expanded selections',async()=>{
-  const app=await createApp();await app.init();
-  const db=app.get(Database),http=request(app.getHttpServer());let userId,meetingId;
+  const app=await createApp();
+  const db=app.services.db,http=request(app.server);let userId,meetingId;
   try{
     const session=await http.post('/api/auth/register').send({name:'Проверка Фильтров',email:`filters-${Date.now()}@example.test`,password:'StrongPass123!'}).expect(201);
     const auth=r=>r.auth(session.body.accessToken,{type:'bearer'});

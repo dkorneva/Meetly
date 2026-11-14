@@ -27,7 +27,7 @@ test('failed tiles are not cached or returned as images, and credentials stay pr
   global.fetch=async()=>{calls++;return new Response('private-test-key quota exceeded',{status:429})};
   try{
     const tiles=new MapTiles();
-    for(let i=0;i<2;i++)await assert.rejects(tiles.get('13','4952','2560'),e=>!e.message.includes('private-test-key')&&e.getStatus()===503);
+    for(let i=0;i<2;i++)await assert.rejects(tiles.get('13','4952','2560'),e=>!e.message.includes('private-test-key')&&e.status===503);
     assert.equal(calls,2);
   }finally{global.fetch=original;if(key===undefined)delete process.env.GEOAPIFY_API_KEY;else process.env.GEOAPIFY_API_KEY=key}
 });
