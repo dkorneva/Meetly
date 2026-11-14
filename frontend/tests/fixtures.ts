@@ -1,11 +1,31 @@
 import type { AppController } from "../src/app/model/useAppController";
-import type { Store } from "../src/entities/meeting";
-import { restaurants } from "../src/entities/meeting";
+import type { Store, Meeting, Restaurant } from "../src/entities/meeting";
+import { restaurants, initialMeetings, initialMessages } from "./data";
 import { initialStore } from "../src/app/model/initialStore";
 
 /** Новый независимый набор данных и обработчиков для каждого теста. */
-export function makeController(overrides: Partial<AppController> = {}): AppController {
-  const store = JSON.parse(JSON.stringify(initialStore)) as Store;
+type ControllerFixture = AppController & {
+  meeting: Meeting;
+  booking: Restaurant;
+};
+export function makeController(
+  overrides: Partial<ControllerFixture> = {},
+): ControllerFixture {
+  const store = JSON.parse(
+    JSON.stringify({
+      ...initialStore,
+      name: "Аня Смирнова",
+      email: "anya@example.com",
+      meetings: initialMeetings,
+      messages: { team: initialMessages },
+    }),
+  ) as Store;
+  store.meetings = store.meetings.map((m) => ({
+    ...m,
+    ownerId: "Аня",
+    members: m.participants.map((name) => ({ id: name, name })),
+    candidates: restaurants,
+  }));
   return {
     removeParticipant: jest.fn(),
     sharePlaceInChat: jest.fn(),
@@ -42,19 +62,27 @@ export function makeController(overrides: Partial<AppController> = {}): AppContr
     showToast: jest.fn(),
     dismissToast: jest.fn(),
     cancelCurrentBooking: jest.fn(),
+    filterOpenNow: false, setFilterOpenNow: jest.fn(), filterQuery: "", setFilterQuery: jest.fn(),
     filterBudget: "Все",
     setFilterBudget: jest.fn(),
-    filterCuisine: "Все",
+    filterCuisine: [],
     setFilterCuisine: jest.fn(),
-    filterDistance: "Все",
-    setFilterDistance: jest.fn(),
     meeting: store.meetings[0],
     update: jest.fn(),
-    updateMeeting: jest.fn(),
-    addMessage: jest.fn(),
+    busy: false,
+    propose: jest.fn(),
+    recommend: jest.fn(),
+    exportMeeting: jest.fn(),
+    loadOlderMessages: jest.fn(),
+    hasOlderMessages: false,
+    discoveryBusy: false,
+    discoveryError: "",
+    refreshMeetings: jest.fn(async () => {}),
     leader: jest.fn(() => restaurants[0]),
     matchingMeetings: store.meetings,
     openMeeting: jest.fn(),
+    openChat: jest.fn(),
+    removeCandidate: jest.fn(),
     book: jest.fn(),
     share: jest.fn(),
     vote: jest.fn(),

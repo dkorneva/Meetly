@@ -1,50 +1,41 @@
-import type { Restaurant, Meeting, Message } from "./models";
+import type { Restaurant, Meeting, Message } from "../src/entities/meeting/model/models";
 
 export const restaurants: Restaurant[] = [
   {
     id: "terrace",
     name: "Терраса",
     cuisine: "Итальянская",
-    distance: "1,2",
     price: 1400,
     rating: "4.7",
     tag: "Подходит всем",
-    image: require("../../../../assets/terrace.png"),
+    image: require("../assets/restaurants/manul-okhotny.webp"),
     phone: "+74951234567",
     website: "https://terrasarest.ru",
     vk: "https://vk.com/terrasarest",
-    x: 52,
-    y: 39,
   },
   {
     id: "coffee",
     name: "Кофемания",
     cuisine: "Кофе и завтраки",
-    distance: "0,8",
     price: 900,
     rating: "4.5",
     tag: "Компромисс",
-    image: require("../../../../assets/coffee.png"),
+    image: require("../assets/restaurants/coffeemania-nikitskaya.webp"),
     phone: "+74951234568",
     website: "https://coffeemania.ru",
     vk: "https://vk.com/coffeemania",
-    x: 23,
-    y: 29,
   },
   {
     id: "pelmeni",
     name: "Пельмени №1",
     cuisine: "Русская",
-    distance: "2,1",
     price: 1100,
     rating: "4.3",
     tag: "Дешевле всех",
-    image: require("../../../../assets/pelmeni.png"),
+    image: require("../assets/restaurants/dr-zhivago.webp"),
     phone: "+74951234569",
     website: "",
     vk: "",
-    x: 82,
-    y: 55,
   },
 ];
 
@@ -64,7 +55,6 @@ export const initialMeetings: Meeting[] = [
     },
     budget: 1500,
     cuisines: ["Итальянская", "Кофе"],
-    district: "Центр",
     format: "В помещении",
   },
   {
@@ -78,7 +68,6 @@ export const initialMeetings: Meeting[] = [
     votes: { Аня: "coffee", Маша: "coffee" },
     budget: 1000,
     cuisines: ["Кофе"],
-    district: "Центр",
     format: "Не важно",
   },
   {
@@ -101,7 +90,6 @@ export const initialMeetings: Meeting[] = [
     votes: { Петя: "pelmeni" },
     budget: 2000,
     cuisines: ["Русская"],
-    district: "Центр",
     format: "В помещении",
   },
 ];
@@ -129,3 +117,4 @@ export const initialMessages: Message[] = [
     otherLikes: 1,
   },
 ];
+
