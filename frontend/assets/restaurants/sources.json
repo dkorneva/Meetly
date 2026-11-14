@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Manul",
+    "photoFile": "manul-okhotny.webp",
+    "photoOriginal": "https://manulmoscow.ru/wp-content/uploads/2026/06/interer_gorizont_021-1-scaled.jpg",
+    "photoSource": "https://manulmoscow.ru/"
+  },
+  {
+    "name": "Mollusca — Большая Дмитровка",
+    "photoFile": "mollusca-dmitrovka.webp",
+    "photoOriginal": "https://new.mollusca.ru/wp-content/uploads/2026/03/dmitrovka-hero.jpg",
+    "photoSource": "https://new.mollusca.ru/dmitrovka/"
+  },
+  {
+    "name": "Хатико",
+    "photoFile": "hachiko-pyatnitskaya.webp",
+    "photoOriginal": "https://static.tildacdn.com/tild3532-6637-4936-b263-623364396265/03_DSC_8956.jpg",
+    "photoSource": "https://www.hachikomoscow.ru/"
+  },
+  {
+    "name": "Кофемания — Никитская",
+    "photoFile": "coffeemania-nikitskaya.webp",
+    "photoOriginal": "https://coffeemania.ru/uploads/r50/23503d45527c7fd.jpg",
+    "photoSource": "https://coffeemania.ru/restaurants/nikitskaya"
+  },
+  {
+    "name": "Salden’s Taphouse — Пятницкая",
+    "photoFile": "saldens-pyatnitskaya.webp",
+    "photoOriginal": "https://static.tildacdn.com/tild6163-6533-4334-b938-336462653764/IMG_1684.jpg",
+    "photoSource": "https://saldenstaphouse.ru/pyatnickaya"
+  },
+  {
+    "name": "Пицца 22 см — Солянка",
+    "photoFile": "pizza22-solyanka.webp",
+    "photoOriginal": "https://pizza22cm.ru/wp-content/uploads/2023/10/4752c974644561.5c3608d619aa4.jpg",
+    "photoSource": "https://pizza22cm.ru/?city=moscow"
+  },
+  {
+    "name": "Джаганнат — Кузнецкий Мост",
+    "photoFile": "jagannath-kuznetsky.webp",
+    "photoOriginal": "https://s3.jagannath.ru/iblock/4d8/DSC_0005.JPG",
+    "photoSource": "https://jagannath.ru/jagannath-1/"
+  },
+  {
+    "name": "Space by Cosmos — Москва Павелецкая, Кожевническая, 8с3",
+    "photoFile": "space-paveletskaya.webp",
+    "photoOriginal": "https://paveletskaya.cosmosgroup.ru/files/hotel_restaurants/49_1747061587.webp",
+    "photoSource": "https://paveletskaya.cosmosgroup.ru/restaurants/space-restoran-i-bar"
+  },
+  {
+    "name": "Каппо Хироки Аракава — Охотный Ряд, 2",
+    "photoFile": "kappo-hiroki.webp",
+    "photoOriginal": "https://static.tildacdn.com/tild6636-3361-4133-b566-376338333839/IMG_5081.jpg",
+    "photoSource": "https://hiroki.ru/"
+  },
+  {
+    "name": "Dr. Живаго — Моховая, 15/1",
+    "photoFile": "dr-zhivago.webp",
+    "photoOriginal": "https://www.drzhivago.ru/images/interior/_34A1290.jpg",
+    "photoSource": "https://www.drzhivago.ru/gallery/59-interior"
+  }
+]
