@@ -1,4 +1,4 @@
-import type { TextStyle, ViewStyle } from "react-native";
+import type { ViewStyle } from "react-native";
 import { StyleSheet } from "react-native";
 import type { ThemeColors } from "../../../shared/theme/index";
 
@@ -10,6 +10,9 @@ import type { ThemeColors } from "../../../shared/theme/index";
  */
 export const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    removeRestaurant: { position: "absolute", right: 12, top: 12, width: 32, height: 32,
+      borderRadius: 16, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center",
+      borderWidth: 1, borderColor: colors.border },
     restaurant: {
       backgroundColor: colors.surface,
       borderWidth: 1,
@@ -27,16 +30,6 @@ export const createStyles = (colors: ThemeColors) =>
       borderRadius: 20,
     },
     restaurantImage: { width: "100%", height: 152 },
-    restaurantTag: {
-      position: "absolute",
-      top: 12,
-      left: 12,
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      paddingVertical: 6,
-      paddingHorizontal: 9,
-    },
-    restaurantTagLabel: { fontSize: 12 },
     restaurantInfo: { padding: 16, gap: 7 },
     restaurantName: { fontSize: 16, fontWeight: "600", color: colors.text },
     rating: { color: colors.rating, fontSize: 13 },
@@ -110,26 +103,6 @@ export const createStyles = (colors: ThemeColors) =>
     },
   });
 
-/**
- * Выбирает цвет метки ресторана по его идентификатору.
- *
- * @param colors - Палитра текущей темы.
- * @param id - Идентификатор обрабатываемого объекта.
- * @returns Вычисленное значение; точный тип указан в сигнатуре TypeScript.
- */
-export function getRestaurantTagColor(
-  colors: ThemeColors,
-  id: string,
-): TextStyle {
-  return {
-    color:
-      id === "terrace"
-        ? colors.restaurantTag
-        : id === "coffee"
-          ? colors.warningText
-          : colors.primaryText,
-  };
-}
 
 /**
  * Вычисляет процент проголосовавших, ограничивая ширину 100% и исключая деление на ноль.

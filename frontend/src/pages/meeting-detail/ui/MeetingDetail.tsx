@@ -1,13 +1,12 @@
-import { Image, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, View } from "react-native";
 import { Avatars, Button, Row } from "../../../shared/ui/controls/index";
 import { useUiStyles } from "../../../shared/ui/shared.styles";
 import { Icon } from "../../../shared/ui/Icon";
-import { restaurants } from "../../../entities/meeting";
+import PlacePhoto from "../../../shared/ui/PlacePhoto";
 import type { Meeting, Restaurant } from "../../../entities/meeting";
 import { Text, useTheme, useThemedStyles } from "../../../shared/theme/index";
 import {
   createStyles,
-  getRestaurantTagColor,
   getVotingProgress,
 } from "./MeetingDetail.styles";
 
@@ -21,54 +20,70 @@ import {
 export function RestaurantCard({
   restaurant: r,
   onVote,
+  voted,
+  disabled,
+  onOpen,
+  onRemove,
 }: {
   restaurant: Restaurant;
   onVote: () => void;
-  voted: boolean; // Принимается от родителя, но пока не меняет вид карточки.
+  voted: boolean;
+  disabled?: boolean;
+  onOpen?: () => void;
+  onRemove?: () => void;
 }) {
-  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const uiStyles = useUiStyles();
 
   return (
-    <View style={styles.restaurant}>
+    <Pressable
+      style={styles.restaurant}
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`Показать ${r.name} на карте`}
+    >
       <View>
-        <Image source={r.image} style={styles.restaurantImage} />
-        <View style={styles.restaurantTag}>
-          <Text
-            style={[
-              styles.restaurantTagLabel,
-              getRestaurantTagColor(colors, r.id),
-            ]}
-          >
-            {r.tag}
-          </Text>
-        </View>
+        <PlacePhoto
+          id={r.id}
+          name={r.name}
+          image={r.image}
+          style={styles.restaurantImage}
+        />
+        {onRemove && <Pressable
+          accessibilityRole="button" accessibilityLabel={`Убрать ${r.name} из голосования`}
+          hitSlop={6} style={styles.removeRestaurant}
+          onPress={event => { event.stopPropagation(); onRemove(); }}>
+          <Icon name="close" size={18} />
+        </Pressable>}
       </View>
       <View style={styles.restaurantInfo}>
         <Row>
           <Text style={styles.restaurantName}>{r.name}</Text>
-          <Text style={styles.rating}>☆ {r.rating}</Text>
+          {!!r.rating && <Text style={styles.rating}>☆ {r.rating}</Text>}
         </Row>
         <Text style={uiStyles.muted}>
-          {r.cuisine} • {r.distance} км
+          {r.cuisineLabel ?? r.cuisine}
         </Text>
         <Row style={styles.priceRow}>
           <View>
             <Text style={styles.price}>
-              {r.price.toLocaleString("ru-RU")} ₽
+              {r.price ? `${r.price.toLocaleString("ru-RU")} ₽` : "Неизвестен"}
             </Text>
             <Text style={styles.priceHint}>средний чек</Text>
+            {!!r.priceSource && <Pressable accessibilityRole="link" accessibilityLabel={`Источник среднего чека ${r.name}`} onPress={event => {event.stopPropagation();void Linking.openURL(r.priceSource!);}}>
+            </Pressable>}
           </View>
           <Button
-            title="Голосовать"
+            title={voted ? "Ваш голос" : "Голосовать"}
+            stopPropagation
+            disabled={disabled}
             textStyle={styles.voteButtonLabel}
             onPress={onVote}
             style={styles.voteButton}
           />
         </Row>
       </View>
-    </View>
+    </Pressable>
   );
 }
 // Подробности встречи: участники, варианты мест и результаты голосования.
@@ -86,6 +101,11 @@ export default function MeetingDetail({
   onManage,
   onChat,
   onBook,
+  discoveryBusy,
+  discoveryError,
+  onMap,
+  currentUserId,
+  onRemoveCandidate,
 }: {
   meeting: Meeting;
   onVote: (id: string) => void;
@@ -93,10 +113,17 @@ export default function MeetingDetail({
   onManage: () => void;
   onChat: () => void;
   onBook: () => void;
+  onRecommend?: () => void;
+  discoveryBusy?: boolean;
+  discoveryError?: string;
+  onMap?: (restaurant?: Restaurant) => void;
+  currentUserId?: string;
+  onRemoveCandidate?: (id: string) => void;
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const uiStyles = useUiStyles();
+  const restaurants = m.candidates ?? [];
 
   return (
     <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -113,7 +140,7 @@ export default function MeetingDetail({
         <Row style={styles.dateRow}>
           <Icon name="clock" size={15} color={colors.textSecondary} />
           <Text style={uiStyles.muted}>
-            {m.time} • Москва, {m.district.toLowerCase()}
+            {m.time}, {m.city ?? "Москва"}
           </Text>
         </Row>
       </View>
@@ -147,18 +174,31 @@ export default function MeetingDetail({
         <View style={styles.divider} />
         <Row>
           <Text style={uiStyles.heading}>Варианты мест</Text>
-          <Text style={styles.count}>3</Text>
+          <Text style={styles.count}>{restaurants.length}</Text>
         </Row>
         <Text style={styles.placesHint}>
-          Подобрали специально для вашей компании
+          Места по предпочтениям вашей компании
         </Text>
+        {m.status === "voting" && !!m.unavailableCandidateCount && <Text style={uiStyles.muted}>
+          Места без актуальной проверки скрыты. Если вы голосовали за такое место, выберите другой вариант.
+        </Text>}
+        {discoveryBusy && (
+          <ActivityIndicator accessibilityLabel="Подбираем заведения" />
+        )}
+        {!!discoveryError && (
+          <Text style={uiStyles.muted}>{discoveryError}</Text>
+        )}
+        
         {/* Показываем варианты из каталога; при голосовании передаём id ресторана. */}
         {restaurants.map((r) => (
           <RestaurantCard
             key={r.id}
             restaurant={r}
+            onOpen={() => onMap?.(r)}
+            onRemove={m.status === "voting" && m.ownerId === currentUserId && onRemoveCandidate ? () => onRemoveCandidate(r.id) : undefined}
             onVote={() => onVote(r.id)}
-            voted={m.votes["Аня"] === r.id}
+            voted={!!currentUserId && m.votes[currentUserId] === r.id}
+            disabled={m.status !== "voting"}
           />
         ))}
         <View style={styles.votingSection}>
@@ -184,8 +224,15 @@ export default function MeetingDetail({
           {Object.entries(m.votes).map(([name, id]) => (
             <Row key={name}>
               <Row style={styles.votingRow}>
-                <Avatars names={[name]} size={22} />
-                <Text style={styles.votingName}>{name}</Text>
+                <Avatars
+                  names={[
+                    m.members?.find((p) => p.id === name)?.name ?? "Участник",
+                  ]}
+                  size={22}
+                />
+                <Text style={styles.votingName}>
+                  {m.members?.find((p) => p.id === name)?.name ?? "Участник"}
+                </Text>
               </Row>
               <Text style={styles.votingCount}>
                 {restaurants.find((r) => r.id === id)?.name}
