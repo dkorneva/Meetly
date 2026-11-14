@@ -13,7 +13,6 @@ import ShareIcon from "../../../assets/icons/share.svg";
 import MoreIcon from "../../../assets/icons/more.svg";
 import SendIcon from "../../../assets/icons/send.svg";
 import ClipIcon from "../../../assets/icons/clip.svg";
-import BellIcon from "../../../assets/icons/bell.svg";
 import MoonIcon from "../../../assets/icons/moon.svg";
 import ExitIcon from "../../../assets/icons/exit.svg";
 import PinIcon from "../../../assets/icons/pin.svg";
@@ -38,7 +37,6 @@ const icons = {
   more: MoreIcon,
   send: SendIcon,
   clip: ClipIcon,
-  bell: BellIcon,
   moon: MoonIcon,
   exit: ExitIcon,
   pin: PinIcon,
