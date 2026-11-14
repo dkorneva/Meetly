@@ -1,0 +1,7 @@
+{
+  "name": "meetly-project",
+  "private": true,
+  "scripts": {
+    "start": "start.cmd"
+  }
+}
