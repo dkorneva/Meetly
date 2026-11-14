@@ -1,11 +1,13 @@
 // App.tsx собирает приложение: выбирает экран и передаёт ему данные и обработчики действий.
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { useState } from "react";
+import type { Restaurant } from "../entities/meeting";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { meetingDate, meetingPlace } from "../entities/meeting";
 import Toast from "../shared/ui/Toast";
 import { Auth } from "../pages/auth";
-import { Chat } from "../pages/chat";
+import { Chat, ChatsScreen } from "../pages/chat";
 import { MapScreen } from "../pages/map";
 import { MeetingDetail } from "../pages/meeting-detail";
 import { MeetingForm } from "../pages/meeting-form";
@@ -40,7 +42,6 @@ export default function App() {
   );
 }
 
-
 /**
  * Выбирает экран по состоянию навигации и передаёт данные и обработчики дочерним компонентам.
  *
@@ -48,6 +49,11 @@ export default function App() {
  * @returns Элементы интерфейса React.
  */
 function AppContent({ controller }: { controller: AppController }) {
+  const [mapResetKey, setMapResetKey] = useState(0);
+  const [mapTarget, setMapTarget] = useState<{
+    meetingId: string;
+    restaurant?: Restaurant;
+  }>();
   // Создаём стили с цветами текущей темы
   const styles = useThemedStyles(createStyles);
 
@@ -69,7 +75,6 @@ function AppContent({ controller }: { controller: AppController }) {
     dismissToast,
     filterBudget,
     filterCuisine,
-    filterDistance,
     meeting, // Объект выбранной встречи.
     update,
     leader,
@@ -77,6 +82,7 @@ function AppContent({ controller }: { controller: AppController }) {
     vote,
     isTabs, // Нужно ли показывать нижнюю навигацию на текущем экране.
   } = controller;
+  const meetingMap = !!mapTarget && mapTarget.meetingId === meeting?.id;
   // Пока данные или шрифт загружаются, показываем логотип вместо основного интерфейса.
   // При ошибке загрузки шрифта разрешаем продолжить, чтобы не зависнуть на логотипе.
   if (!loaded || (!fontsLoaded && !fontError))
@@ -129,13 +135,24 @@ function AppContent({ controller }: { controller: AppController }) {
               {screen === "meetings" && (
                 <MeetingsScreen controller={controller} />
               )}
-              {screen === "detail" && (
+              {screen === "detail" && meeting && (
                 <MeetingDetail
                   meeting={meeting}
                   onVote={vote}
+                  onRemoveCandidate={controller.removeCandidate}
+                  onRecommend={controller.recommend}
+                  discoveryBusy={controller.discoveryBusy}
+                  discoveryError={controller.discoveryError}
+                  onMap={(restaurant) => {
+                    setMapTarget(
+                      { meetingId: meeting.id, restaurant },
+                    );
+                    setScreen("map");
+                  }}
+                  currentUserId={store.userId}
                   onEdit={() => setScreen("edit")}
                   onManage={() => setDialog("participants")} // Открываем диалог, сохраняя текущий экран.
-                  onChat={() => setScreen("chat")}
+                  onChat={() => controller.openChat(meeting.id, "meeting")}
                   onBook={() => book(meetingPlace(meeting))} // Передаём выбранное место в обработчик бронирования.
                 />
               )}
@@ -145,67 +162,111 @@ function AppContent({ controller }: { controller: AppController }) {
                   key={screen}
                   // Для редактирования передаём встречу; для создания — оставляем свойство без значения.
                   meeting={screen === "edit" ? meeting : undefined}
+                  preferencesOnly={
+                    screen === "edit" && meeting?.ownerId !== store.userId
+                  }
                   onSave={saveMeeting}
                 />
               )}
               {screen === "map" && (
-                <MapScreen
-                  // Передаём выбранные в приложении ограничения поиска ресторанов.
-                  filters={{
-                    budget: filterBudget,
-                    cuisine: filterCuisine,
-                    distance: filterDistance,
-                  }}
-                  onBook={book}
-                  onFilters={() => setDialog("filters")}
-                />
+                <>
+                  <MapScreen
+                    key={meetingMap ? `meeting:${meeting?.id}` : `catalog:${mapResetKey}`}
+                    mode={meetingMap ? "meeting" : "catalog"}
+                    meeting={meeting}
+                    initialRestaurant={
+                      mapTarget?.meetingId === meeting?.id
+                        ? mapTarget?.restaurant
+                        : undefined
+                    }
+                    onChanged={controller.refreshMeetings}
+                    // Передаём выбранные в приложении ограничения поиска ресторанов.
+                    filters={{
+                      budget: filterBudget,
+                      cuisine: filterCuisine,
+                      openNow: controller.filterOpenNow,
+                      q: controller.filterQuery,
+                    }}
+                    onFilterChange={patch => {
+                      if (patch.budget !== undefined) controller.setFilterBudget(patch.budget);
+                      if (patch.cuisine !== undefined) controller.setFilterCuisine(patch.cuisine);
+                      if (patch.openNow !== undefined) controller.setFilterOpenNow(patch.openNow);
+                      if (patch.q !== undefined) controller.setFilterQuery(patch.q);
+                    }}
+                    onBook={book}
+                    onPropose={controller.propose}
+                    onFilters={() => setDialog("filters")}
+                  />
+                </>
               )}
-              {screen === "chat" && (
+              {screen === "chats" && <ChatsScreen meetings={store.meetings} userId={store.userId} onOpen={id => controller.openChat(id, "list")} />}
+              {screen === "chat" && meeting && (
                 <Chat
+                  key={meeting.id}
                   meeting={meeting}
                   messages={[
                     // ... добавляет элементы массива в новый массив.
                     // Берём чат выбранной встречи; если его нет, ?? [] даёт пустой список.
-                    // Старые карточки выбора места исключаем: ниже создаём актуальную.
-                    ...(store.messages[selected] ?? []).filter(
-                      (m) => m.kind !== "selected",
-                    ),
-                    // В конце завершённой встречи показываем карточку с её местом и временем.
-                    ...(meeting.status === "completed" && meeting.restaurantId
+                    // Серверные события выбора места остаются в истории.
+                    ...(store.messages[selected] ?? []),
+                    // Старые встречи могли быть подтверждены до появления событий выбора места.
+                    ...(meeting.status !== "voting" && meeting.restaurantId && !(store.messages[selected] ?? []).some(m => m.kind === "selected")
                       ? [
                           {
                             id: "meeting-place",
                             name: "",
                             time: "",
+                            createdAt: meeting.bookedAt ?? meeting.updatedAt,
                             kind: "selected" as const, // Для TypeScript это точное значение "selected".
-                            text: `${meetingPlace(meeting).name}, ${meetingDate(
+                            text: `${meetingPlace(meeting)?.name ?? "Место"}, ${meetingDate(
                               meeting.date,
                             ).toLowerCase()} в ${meeting.time}`,
                           },
                         ]
                       : []),
                   ]}
-                  leader={leader().name} // Получаем название ресторана-лидера голосования.
+                  leader={leader()?.name ?? "Место пока не выбрано"}
                   onLeader={() => setScreen("detail")}
                   onSend={sendMessage} // Chat вызывает эту функцию, когда пользователь отправляет текст.
                   onLike={toggleMessageLike}
                   onAttach={() => setDialog("attachment")}
+                  onLoadOlder={controller.loadOlderMessages}
+                  hasOlderMessages={controller.hasOlderMessages}
                 />
               )}
               {screen === "profile" && (
                 <ProfileScreen controller={controller} />
               )}
+              {(screen === "chat" ||
+                screen === "detail" ||
+                screen === "edit") &&
+                !meeting && (
+                  <Text>
+                    Выберите или создайте встречу во вкладке «Встречи».
+                  </Text>
+                )}
               {/* Нижние вкладки переключают основные разделы приложения. */}
-              {isTabs && <BottomNavigation controller={controller} />}
+              {isTabs && <BottomNavigation controller={{...controller,setScreen:(next)=>{if(next==="map"){setMapTarget(undefined);if(screen==="map"){controller.setFilterBudget("Все");controller.setFilterCuisine([]);controller.setFilterOpenNow(false);controller.setFilterQuery("");setMapResetKey(value=>value+1);}}setScreen(next === "chat" ? "chats" : next);}}} />}
             </>
           )}
           {/* Короткое уведомление видно, если оно есть и поверх экрана не открыт диалог. */}
           {toast !== null && dialog === null && (
             // Новый key создаёт Toast заново, перезапуская его анимацию для нового уведомления.
-            <Toast key={toast.id} type={toast.type} text={toast.message} onDismiss={dismissToast} />
+            <Toast
+              key={toast.id}
+              type={toast.type}
+              text={toast.message}
+              onDismiss={dismissToast}
+            />
           )}
           {/* DialogHost показывает нужное диалоговое окно по значению dialog. */}
           <DialogHost controller={controller} />
+          {controller.busy && (
+            <ActivityIndicator
+              accessibilityLabel="Загрузка"
+              style={{ position: "absolute", top: 10, right: 10 }}
+            />
+          )}
         </SafeAreaView>
       </View>
     </>

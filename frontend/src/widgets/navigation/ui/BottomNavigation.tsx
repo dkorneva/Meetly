@@ -45,13 +45,13 @@ export default function BottomNavigation({
           <Icon
             name={tab.icon}
             color={
-              screen === tab.screen ? colors.primaryText : colors.textMuted
+              (screen === tab.screen || (tab.screen === "chat" && screen === "chats")) ? colors.primaryText : colors.textMuted
             }
           />
           <Text
             style={[
               styles.tabLabel,
-              getTabLabel(colors, screen === tab.screen),
+              getTabLabel(colors, screen === tab.screen || (tab.screen === "chat" && screen === "chats")),
             ]}
           >
             {tab.label}

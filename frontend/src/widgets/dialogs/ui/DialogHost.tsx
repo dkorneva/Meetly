@@ -1,8 +1,3 @@
-import type { DialogName } from "../../../shared/config/dialogs";
-import type { ToastNotification, ToastType } from "../../../shared/ui/Toast.types";
-import type { Restaurant, Meeting } from "../../../entities/meeting";
-import type { Store } from "../../../entities/meeting";
-import type { Screen } from "../../../shared/config/screens";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -27,7 +22,6 @@ import { useUiStyles } from "../../../shared/ui/shared.styles";
 import { Text, useThemedStyles } from "../../../shared/theme/index";
 import { createStyles } from "./DialogHost.styles";
 
-
 // Общая оболочка диалогов: фон, панель, заголовок и кнопки закрытия.
 // controller приходит через пропсы из AppContent; состояние хранится в useAppController.
 /**
@@ -39,40 +33,7 @@ import { createStyles } from "./DialogHost.styles";
 export default function DialogHost({
   controller,
 }: {
-  controller: {
-    dialog: DialogName;
-    setDialog: (dialog: DialogName) => void;
-    toast: ToastNotification | null;
-    dismissToast: () => void;
-    sharePlaceInChat: () => void;
-    pickAttachment: () => Promise<void>;
-    confirmCurrentBooking: () => void;
-    booking: Restaurant;
-    showToast: (type: ToastType, message: string) => void;
-    cancelCurrentBooking: () => void;
-    meeting: Meeting;
-    store: Store;
-    update: (patch: Partial<Store>) => void;
-    saveProfile: () => void;
-    editName: string;
-    setEditName: (value: string) => void;
-    editEmail: string;
-    setEditEmail: (value: string) => void;
-    pickAvatar: () => Promise<void>;
-    filterBudget: string;
-    setFilterBudget: (value: string) => void;
-    filterCuisine: string;
-    setFilterCuisine: (value: string) => void;
-    filterDistance: string;
-    setFilterDistance: (value: string) => void;
-    inviteParticipant: () => void;
-    inviteName: string;
-    setInviteName: (value: string) => void;
-    share: () => void;
-    selectLeader: () => void;
-    setScreen: (screen: Screen) => void;
-    removeParticipant: (name: string) => void;
-  };
+  controller: import("../../../app/model/useAppController").AppController;
 }) {
   const styles = useThemedStyles(createStyles); // Стили оболочки с учётом текущей темы.
   const uiStyles = useUiStyles(); // Общие стили интерфейса: здесь нужен heading для заголовка.
@@ -140,18 +101,42 @@ export default function DialogHost({
           >
             {/* Условный рендеринг: показываем компонент, название которого совпало с dialog.
                 Через проп controller передаём ему данные и функции для обработки действий. */}
-            {dialog === "booking" && <BookingDialog controller={controller} />}
-            {dialog === "participants" && (
-              <ParticipantsDialog controller={controller} />
+            {dialog === "booking" &&
+              controller.meeting &&
+              controller.booking && (
+                <BookingDialog
+                  controller={{
+                    ...controller,
+                    meeting: controller.meeting!,
+                    booking: controller.booking!,
+                  }}
+                />
+              )}
+            {dialog === "participants" && controller.meeting && (
+              <ParticipantsDialog
+                controller={{ ...controller, meeting: controller.meeting! }}
+              />
             )}
-            {dialog === "invite" && <InviteDialog controller={controller} />}
-            {dialog === "calendar" && <CalendarExportDialog controller={controller} />}
-            {dialog === "profile" && <EditProfileDialog controller={controller} />}
+            {dialog === "invite" && controller.meeting && (
+              <InviteDialog
+                controller={{ ...controller, meeting: controller.meeting! }}
+              />
+            )}
+            {dialog === "calendar" && (
+              <CalendarExportDialog controller={controller} />
+            )}
+            {dialog === "profile" && (
+              <EditProfileDialog controller={controller} />
+            )}
             {dialog === "filters" && <FiltersDialog controller={controller} />}
             {dialog === "attachment" && (
               <AttachmentDialog controller={controller} />
             )}
-            {dialog === "menu" && <MeetingActionsDialog controller={controller} />}
+            {dialog === "menu" && controller.meeting && (
+              <MeetingActionsDialog
+                controller={{ ...controller, meeting: controller.meeting! }}
+              />
+            )}
             {/* Общая кнопка закрытия для любого диалога. */}
             <Pressable
               onPress={() => setDialog(null)}
@@ -167,7 +152,12 @@ export default function DialogHost({
           При изменении key React создаёт Toast заново и повторно запускает его анимацию.
           onDismiss устанавливает toast в null, после чего условие перестаёт выполняться. */}
       {toast !== null && dialog !== null && (
-        <Toast key={toast.id} type={toast.type} text={toast.message} onDismiss={dismissToast} />
+        <Toast
+          key={toast.id}
+          type={toast.type}
+          text={toast.message}
+          onDismiss={dismissToast}
+        />
       )}
     </Modal>
   );

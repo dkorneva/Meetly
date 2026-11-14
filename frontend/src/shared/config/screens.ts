@@ -9,4 +9,5 @@ export type Screen =
   | "edit"
   | "map"
   | "chat"
+  | "chats"
   | "profile";

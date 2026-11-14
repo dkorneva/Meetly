@@ -19,7 +19,7 @@ export default function AppHeader({
   controller: {
     screen: Screen;
     setDialog: (dialog: DialogName) => void;
-    meeting: Meeting;
+    meeting?: Meeting;
     share: () => void;
     goBack: () => void;
     title: string;
@@ -39,7 +39,7 @@ export default function AppHeader({
 
   // goBack — функция, которая вызывается при нажатии на кнопку «Назад»
 
-  // title — заголовок, который отображается в центре 
+  // title — заголовок, который отображается в центре
 }) {
   const styles = useThemedStyles(createStyles);
 
@@ -60,7 +60,7 @@ export default function AppHeader({
         )}
         {screen === "chat" && (
           <Text style={styles.onlineStatus}>
-            {meeting.participants.length} участников онлайн
+            {meeting?.participants.length ?? 0} участников
           </Text>
         )}
       </View>

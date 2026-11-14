@@ -11,7 +11,9 @@ import { makeController } from "./fixtures";
 
 // Заменяем настоящий хук подставной функцией: каждый тест сам задаст её результат.
 // jest.fn() также запоминает вызовы функции и переданные аргументы.
-jest.mock("../src/app/model/useAppController", () => ({ useAppController: jest.fn() }));
+jest.mock("../src/app/model/useAppController", () => ({
+  useAppController: jest.fn(),
+}));
 
 // Контроллер подменён: здесь проверяются выбор экрана и передача действий.
 describe("App и AppContent", () => {
@@ -19,7 +21,9 @@ describe("App и AppContent", () => {
   test("показывает логотип до загрузки данных", async () => {
     // jest.mocked сообщает TypeScript, что хук подменён; mockReturnValue задаёт его результат.
     // loaded: false означает, что приложение ещё ждёт загрузки данных.
-    jest.mocked(useAppController).mockReturnValue(makeController({ loaded: false }));
+    jest
+      .mocked(useAppController)
+      .mockReturnValue(makeController({ loaded: false }));
     // Ждём отрисовки App. Через ui можно искать элементы в полученном интерфейсе.
     const ui = await render(<App />);
     // expect начинает проверку. getByText ищет текст и выдаёт ошибку, если его нет.
@@ -33,11 +37,16 @@ describe("App и AppContent", () => {
   // [Screen, RegExp] — тип пары: название экрана и регулярное выражение для поиска текста.
   // Например, /Соберите всех/ ищет текст, содержащий эти слова.
   test.each<[Screen, RegExp]>([
-    ["intro", /Соберите всех/], ["login", /Войти в аккаунт/],
-    ["register", /Создать аккаунт/], ["meetings", /Активные встречи/],
-    ["detail", /Варианты мест/], ["new", /Создать встречу/],
-    ["edit", /Сохранить предпочтения/], ["map", /Рестораны рядом/],
-    ["chat", /ЛИДИРУЕТ/], ["profile", /ПОДКЛЮЧЕНИЯ/],
+    ["intro", /Соберите всех/],
+    ["login", /Войти в аккаунт/],
+    ["register", /Создать аккаунт/],
+    ["meetings", /Активные встречи/],
+    ["detail", /Варианты мест/],
+    ["new", /Создать встречу/],
+    ["edit", /Сохранить предпочтения/],
+    ["map", /Поиск ресторанов/],
+    ["chat", /ЛИДИРУЕТ/],
+    ["profile", /ПОДКЛЮЧЕНИЯ/],
   ])("показывает экран %s", async (screen, marker) => {
     // %s в названии теста заменится названием экрана.
     // screen и marker берутся из текущей строки таблицы.
@@ -45,7 +54,8 @@ describe("App и AppContent", () => {
     jest.mocked(useAppController).mockReturnValue(makeController({ screen }));
     const ui = await render(<App />);
     // На карте нужная надпись — подсказка в поле ввода, поэтому ищем по placeholder.
-    if (screen === "map") expect(ui.getByPlaceholderText(marker)).toBeOnTheScreen();
+    if (screen === "map")
+      expect(ui.getByPlaceholderText(marker)).toBeOnTheScreen();
     // На других экранах ищем обычный текст. getAllByText возвращает массив элементов;
     // проверяем, что его длина больше нуля — найден хотя бы один элемент.
     else expect(ui.getAllByText(marker).length).toBeGreaterThan(0);
@@ -65,4 +75,30 @@ describe("App и AppContent", () => {
     // данных или появление следующего экрана.
     expect(c.setScreen).toHaveBeenCalledWith("register");
   });
+});
+
+test("вкладки сохраняют фильтры карты, повторное нажатие карты сбрасывает их", async () => {
+  let current: ReturnType<typeof makeController>;
+  jest.mocked(useAppController).mockImplementation(function useStatefulController() {
+    const React = require("react");
+    const [screen, setScreen] = React.useState("map");
+    const [filterBudget, setFilterBudget] = React.useState("До 7200 ₽");
+    const [filterCuisine, setFilterCuisine] = React.useState(["Японская", "Грузинская"]);
+    const [filterOpenNow, setFilterOpenNow] = React.useState(true);
+    const [filterQuery, setFilterQuery] = React.useState("Рамен");
+    current = makeController({screen,setScreen,filterBudget,setFilterBudget,filterCuisine,setFilterCuisine,filterOpenNow,setFilterOpenNow,filterQuery,setFilterQuery});
+    return current;
+  });
+  const ui = await render(<App />);
+  await fireEvent.press(ui.getByText("Профиль"));
+  await fireEvent.press(ui.getByText("Карта"));
+  expect(current!.filterCuisine).toEqual(["Японская", "Грузинская"]);
+  expect(current!.filterBudget).toBe("До 7200 ₽");
+  expect(current!.filterOpenNow).toBe(true);
+  expect(current!.filterQuery).toBe("Рамен");
+  await fireEvent.press(ui.getByText("Карта"));
+  expect(current!.filterCuisine).toEqual([]);
+  expect(current!.filterBudget).toBe("Все");
+  expect(current!.filterOpenNow).toBe(false);
+  expect(current!.filterQuery).toBe("");
 });
