@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import swaggerUi from "swagger-ui-express";
@@ -28,11 +27,6 @@ export async function createApp(options: { connectDatabase?: boolean } = {}) {
   const app = express();
   app.disable("x-powered-by");
   app.set("query parser", "simple");
-  app.use(helmet({
-    contentSecurityPolicy: false,
-    frameguard: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  }));
   const origins = (process.env.WEB_ORIGINS ?? "http://localhost:8081").split(",");
   app.use(cors({ origin: origins, credentials: false }));
   app.use(express.json({ limit: "100kb" }));
