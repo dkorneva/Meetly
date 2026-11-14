@@ -1,7 +1,12 @@
 import { render, fireEvent } from "@testing-library/react-native";
 import { Auth } from "../../src/pages/auth";
 
-const props = () => ({ register: false, onSwitch: jest.fn(), onBack: jest.fn(), onEnter: jest.fn() });
+const props = () => ({
+  register: false,
+  onSwitch: jest.fn(),
+  onBack: jest.fn(),
+  onEnter: jest.fn(),
+});
 
 describe("Auth: вход и управление формой", () => {
   test.each([
@@ -11,8 +16,14 @@ describe("Auth: вход и управление формой", () => {
   ])("блокирует вход: %s / %s", async (email, password, error) => {
     const p = props();
     const ui = await render(<Auth {...p} />);
-    await fireEvent.changeText(ui.getByPlaceholderText("name@example.ru"), email);
-    await fireEvent.changeText(ui.getByPlaceholderText("Введите пароль"), password);
+    await fireEvent.changeText(
+      ui.getByPlaceholderText("name@example.ru"),
+      email,
+    );
+    await fireEvent.changeText(
+      ui.getByPlaceholderText("Введите пароль"),
+      password,
+    );
     await fireEvent.press(ui.getByRole("button", { name: "Войти" }));
     expect(ui.getByText(error)).toBeOnTheScreen();
     expect(p.onEnter).not.toHaveBeenCalled();
@@ -23,19 +34,28 @@ describe("Auth: вход и управление формой", () => {
     const ui = await render(<Auth {...p} />);
     expect(ui.queryByPlaceholderText("Как к вам обращаться")).toBeNull();
     expect(ui.queryByPlaceholderText("Повторите пароль")).toBeNull();
-    await fireEvent.changeText(ui.getByPlaceholderText("name@example.ru"), "mail@example.ru");
+    await fireEvent.changeText(
+      ui.getByPlaceholderText("name@example.ru"),
+      "mail@example.ru",
+    );
     await fireEvent.changeText(ui.getByPlaceholderText("Введите пароль"), "x");
     await fireEvent.press(ui.getByRole("button", { name: "Войти" }));
-    expect(p.onEnter).toHaveBeenCalledWith("Аня", "mail@example.ru");
+    expect(p.onEnter).toHaveBeenCalledWith("", "mail@example.ru", "x");
   });
 
   test("позволяет показать и снова скрыть пароль", async () => {
     const ui = await render(<Auth {...props()} />);
-    expect(ui.getByPlaceholderText("Введите пароль").props.secureTextEntry).toBe(true);
+    expect(
+      ui.getByPlaceholderText("Введите пароль").props.secureTextEntry,
+    ).toBe(true);
     await fireEvent.press(ui.getByText("Показать"));
-    expect(ui.getByPlaceholderText("Введите пароль").props.secureTextEntry).toBe(false);
+    expect(
+      ui.getByPlaceholderText("Введите пароль").props.secureTextEntry,
+    ).toBe(false);
     await fireEvent.press(ui.getByText("Скрыть"));
-    expect(ui.getByPlaceholderText("Введите пароль").props.secureTextEntry).toBe(true);
+    expect(
+      ui.getByPlaceholderText("Введите пароль").props.secureTextEntry,
+    ).toBe(true);
   });
 
   test.each([

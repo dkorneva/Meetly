@@ -23,7 +23,7 @@ export default function Auth({
   register: boolean;
   onSwitch: () => void;
   onBack: () => void;
-  onEnter: (name: string, email: string) => void;
+  onEnter: (name: string, email: string, password: string) => void;
 }) {
   // Получаем цвета и стили для текущей темы.
   const { colors } = useTheme();
@@ -37,9 +37,16 @@ export default function Auth({
   const [visible, setVisible] = useState(false); // Показывать ли пароль открытым текстом.
   const [submitted, setSubmitted] = useState(false);
   const [confirmationTouched, setConfirmationTouched] = useState(false);
-  const errors = validateAuth({ register, name, email, password, confirmPassword });
+  const errors = validateAuth({
+    register,
+    name,
+    email,
+    password,
+    confirmPassword,
+  });
   const error = submitted ? errors.name || errors.email || errors.password : "";
-  const confirmationError = (submitted || confirmationTouched) ? errors.confirmPassword : "";
+  const confirmationError =
+    submitted || confirmationTouched ? errors.confirmPassword : "";
   return (
     <ScrollView
       contentContainerStyle={styles.root}
@@ -83,7 +90,7 @@ export default function Auth({
         <View style={styles.passwordContainer}>
           <Field
             label="Пароль"
-            placeholder={register ? "Не менее 6 символов" : "Введите пароль"}
+            placeholder={register ? "Не менее 8 символов" : "Введите пароль"}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!visible} // Скрываем символы пароля, пока visible равно false.
@@ -104,7 +111,8 @@ export default function Auth({
         {register && (
           <>
             <Text style={styles.passwordHint}>
-              Минимум 6 символов: строчная и заглавная латинские буквы, цифра и специальный символ.
+              Минимум 8 символов: строчная и заглавная латинские буквы, цифра и
+              специальный символ.
             </Text>
             <Field
               label="Подтверждение пароля"
@@ -120,7 +128,9 @@ export default function Auth({
               autoCorrect={false}
               autoComplete="new-password"
             />
-            {!!confirmationError && <Text style={styles.error}>{confirmationError}</Text>}
+            {!!confirmationError && (
+              <Text style={styles.error}>{confirmationError}</Text>
+            )}
           </>
         )}
       </View>
@@ -132,9 +142,8 @@ export default function Auth({
         onPress={() => {
           setSubmitted(true);
           if (Object.values(errors).some(Boolean)) return;
-          // Передаём данные родителю. Проверки пароля на сервере здесь нет:
-          // в режиме входа пока используется демонстрационное имя «Аня».
-          onEnter(register ? name.trim() : "Аня", email.trim());
+          // Передаём пароль серверу для проверки учётной записи.
+          onEnter(name.trim(), email.trim(), password);
         }}
       />
       <Pressable onPress={onSwitch} style={styles.switchButton}>
