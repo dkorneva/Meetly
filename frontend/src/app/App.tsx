@@ -173,7 +173,8 @@ function AppContent({ controller }: { controller: AppController }) {
                   <MapScreen
                     key={meetingMap ? `meeting:${meeting?.id}` : `catalog:${mapResetKey}`}
                     mode={meetingMap ? "meeting" : "catalog"}
-                    meeting={meeting}
+                    meeting={meetingMap ? meeting : undefined}
+                    meetings={store.meetings}
                     initialRestaurant={
                       mapTarget?.meetingId === meeting?.id
                         ? mapTarget?.restaurant

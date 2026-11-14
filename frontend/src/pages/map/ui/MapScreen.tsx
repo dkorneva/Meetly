@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
   Linking,
   Pressable,
   ScrollView,
@@ -33,6 +32,7 @@ import { createStyles } from "./MapScreen.styles";
 export default function MapScreen({
   mode = "catalog",
   meeting,
+  meetings = [],
   filters,
   onFilters,
   onFilterChange,
@@ -43,11 +43,12 @@ export default function MapScreen({
 }: {
   mode?: "catalog" | "meeting";
   meeting?: Meeting;
+  meetings?: Meeting[];
   filters: MapFilters;
   onFilters: () => void;
   onFilterChange?: (patch: Partial<MapFilters>) => void;
   onBook: (r: Restaurant) => void;
-  onPropose?: (r: Restaurant) => void;
+  onPropose?: (r: Restaurant, meetingId?: string) => void | Promise<void>;
   onChanged?: () => Promise<void>;
   initialRestaurant?: Restaurant;
 }) {
@@ -67,7 +68,9 @@ export default function MapScreen({
   const setQuery = (value: string) => { setLocalQuery(value); onFilterChange?.({q:value}); };
   /** Сохраняет фильтр открытых заведений между переходами по вкладкам. */
   const setOpen = (value: boolean) => { setLocalOpen(value); onFilterChange?.({openNow:value}); };
-  const [detailsOpen,setDetailsOpen]=useState(false);
+  const [meetingPickerOpen, setMeetingPickerOpen] = useState(false);
+  const [addingPlace, setAddingPlace] = useState(false);
+  const [actionSize, setActionSize] = useState({ width: 220, height: 44 });
   const [center, setCenter] = useState({
     latitude: initialRestaurant?.latitude ?? 55.7558,
     longitude: initialRestaurant?.longitude ?? 37.6176,
@@ -137,6 +140,7 @@ export default function MapScreen({
     if (event.type === "select" && event.id) setSelected(event.id);
   }, []);
   const active = items.find((r) => r.id === selected);
+  useEffect(() => { setMeetingPickerOpen(false); }, [selected, mode]);
   useEffect(() => {
     if (!selected) return;
     let valid = true;
@@ -161,6 +165,22 @@ export default function MapScreen({
     };
   }, [selected]);
   const included = !!meeting?.candidates?.some((r) => r.id === selected);
+  const canBook = mode === "meeting" && included;
+  const availableMeetings = meetings.filter(item =>
+    item.status === "voting" && !item.candidates?.some(place => place.id === selected),
+  );
+  async function chooseMeeting(target: Meeting) {
+    if (!active || addingPlace) return;
+    setMeetingPickerOpen(false);
+    setAddingPlace(true);
+    try {
+      await onPropose?.(active, target.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось добавить место во встречу");
+    } finally {
+      setAddingPlace(false);
+    }
+  }
   return (
     <View style={styles.root} accessibilityLabel={mode==="meeting"?`Вариантов встречи: ${items.length}`:`Найдено: ${items.length}, Садовое кольцо`}>
       <RestaurantMap
@@ -235,6 +255,12 @@ export default function MapScreen({
         )}
       </View>
 
+      {meetingPickerOpen && <Pressable
+        style={styles.meetingPickerDismiss}
+        accessibilityRole="button"
+        accessibilityLabel="Закрыть список встреч"
+        onPress={() => setMeetingPickerOpen(false)}
+      />}
       <View style={styles.bottom}>
         {active ? (
           <>
@@ -272,17 +298,25 @@ export default function MapScreen({
                   )
                 }
               />
-              <Button
-                title={!meeting ? "Подробнее" : included ? "Забронировать" : "Выбрать место"}
-                disabled={active.available === false || (!!meeting && !included && meeting.status !== "voting")}
-                style={styles.bookingButton}
-                textStyle={styles.actionLabel}
-                onPress={() => {
-                  if(!meeting)setDetailsOpen(true);
-                  else if (included) onBook(active);
-                  else onPropose?.(active);
-                }}
-              />
+              <View style={styles.bookingAction} onLayout={event => {
+                const { width, height } = event.nativeEvent.layout;
+                setActionSize({ width, height });
+              }}>
+                <Button
+                  title={canBook ? "Забронировать" : "Выбрать место"}
+                  disabled={active.available === false || addingPlace}
+                  style={[styles.bookingButton, !canBook && styles.meetingPickerButton]}
+                  textStyle={styles.actionLabel}
+                  accessibilityState={canBook ? undefined : { expanded: meetingPickerOpen }}
+                  onPress={() => {
+                    if (canBook) onBook(active);
+                    else setMeetingPickerOpen(!meetingPickerOpen);
+                  }}
+                />
+                {!canBook && <View pointerEvents="none" style={[styles.meetingPickerChevron, { transform: [{ rotate: meetingPickerOpen ? "-90deg" : "90deg" }] }]}>
+                  <Icon name="chevron" size={12} color={colors.onPrimary} />
+                </View>}
+              </View>
             </Row>
           </>
         ) : (
@@ -300,22 +334,25 @@ export default function MapScreen({
           </>
         )}
       </View>
-      <Modal visible={detailsOpen&&!!active} transparent animationType="fade" onRequestClose={()=>setDetailsOpen(false)}>
-        <Pressable style={styles.detailsBackdrop} onPress={()=>setDetailsOpen(false)} accessibilityLabel="Закрыть подробности">
-          <Pressable style={styles.detailsSheet} onPress={event=>event.stopPropagation()}>
-            <Row><Text style={styles.detailsTitle}>О ресторане</Text><Pressable onPress={()=>setDetailsOpen(false)} accessibilityLabel="Закрыть" hitSlop={12}><Icon name="close" size={20}/></Pressable></Row>
-            {active&&<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.detailsContent}>
-              <Text style={styles.restaurantName}>{active.name}</Text>
-              <Text style={styles.restaurantDescription}>{active.cuisineLabel??active.cuisine}</Text>
-              <Text style={styles.detailsText}>{active.address}</Text>
-              <Text style={styles.detailsText}>{active.price?`Средний чек: ${active.price.toLocaleString("ru-RU")} ₽ на человека`:"Средний чек уточняется"}</Text>
-              {!!active.phone&&<Text style={styles.detailLink} accessibilityRole="link" onPress={()=>void Linking.openURL(`tel:${active.phone}`)}>{active.phone}</Text>}
-              {!!active.website&&<Text style={styles.detailLink} accessibilityRole="link" onPress={()=>void Linking.openURL(active.website)}>Сайт ресторана</Text>}
-              {!!active.priceSource&&<Text style={styles.detailLink} accessibilityRole="link" onPress={()=>void Linking.openURL(active.priceSource!)}>Источник среднего чека, Restorating</Text>}
-            </ScrollView>}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {meetingPickerOpen && <View style={[styles.meetingPicker, { width: Math.max(220, actionSize.width), bottom: 34 + actionSize.height }]}>
+        <Text style={styles.meetingPickerTitle}>Добавить во встречу</Text>
+        <ScrollView style={styles.meetingPickerList} keyboardShouldPersistTaps="handled">
+          {availableMeetings.map(item => <Pressable
+            key={item.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Добавить в «${item.title}», ${item.date}, ${item.time}`}
+            style={({ pressed }) => [styles.meetingOption, pressed && styles.meetingOptionPressed]}
+            onPress={() => void chooseMeeting(item)}
+          >
+            <Text style={styles.meetingOptionTitle}>{item.title}</Text>
+            <Text style={styles.meetingOptionDate}>{item.date.split("-").reverse().join(".")} · {item.time}</Text>
+          </Pressable>)}
+          {!availableMeetings.length && <Text style={styles.meetingPickerEmpty}>
+            Нет встреч с открытым голосованием, в которые можно добавить это место.
+          </Text>}
+        </ScrollView>
+      </View>}
+
     </View>
   );
 }

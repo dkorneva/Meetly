@@ -31,10 +31,57 @@ test('Из карточки встречи отображаются только
   expect(jest.mocked(api).mock.calls.some(([p])=>p.includes('/discovery')||p.includes('/recommendations'))).toBe(false);
   expect(ui.queryByLabelText('Фильтры')).toBeNull();
 });
-test('Найденный ресторан можно предложить выбранной встрече',async()=>{
-  const onPropose=jest.fn();const ui=await render(<MapScreen meeting={{...makeController().meeting!,status:'voting'}} filters={filters} onBook={jest.fn()} onPropose={onPropose} onFilters={jest.fn()}/>);
+test('Список предлагает только открытые встречи без этого заведения и добавляет место в выбранную встречу',async()=>{
+  const base=makeController().meeting;
+  const meetings=[
+    {...base,id:'first',title:'Первый ужин',status:'voting' as const,candidates:[]},
+    {...base,id:'second',title:'Второй ужин',status:'voting' as const,candidates:[]},
+    {...base,id:'closed',title:'Голосование закрыто',status:'selected' as const,candidates:[]},
+    {...base,id:'already',title:'Уже добавлено',status:'voting' as const,candidates:[restaurantView(places[0])]},
+  ];
+  const onPropose=jest.fn();const ui=await render(<MapScreen meetings={meetings} filters={filters} onBook={jest.fn()} onPropose={onPropose} onFilters={jest.fn()}/>);
   await waitFor(()=>expect(ui.getByText('Ресторан 0')).toBeOnTheScreen());
-  await fireEvent.press(ui.getByRole('button',{name:'Выбрать место'}));expect(onPropose).toHaveBeenCalledWith(expect.objectContaining({id:'place-0'}));
+  await fireEvent.press(ui.getByRole('button',{name:'Выбрать место'}));
+  expect(onPropose).not.toHaveBeenCalled();
+  expect(ui.getByRole('button',{name:'Выбрать место'}).props.accessibilityState).toEqual(expect.objectContaining({expanded:true}));
+  expect(ui.getByText('Первый ужин')).toBeOnTheScreen();
+  expect(ui.getByText('Второй ужин')).toBeOnTheScreen();
+  expect(ui.queryByText('Голосование закрыто')).toBeNull();
+  expect(ui.queryByText('Уже добавлено')).toBeNull();
+  await fireEvent.press(ui.getByRole('button',{name:/Добавить в «Второй ужин»/}));
+  expect(onPropose).toHaveBeenCalledWith(expect.objectContaining({id:'place-0'}),'second');
+  await waitFor(()=>expect(ui.queryByText('Добавить во встречу')).toBeNull());
+});
+
+test('Без подходящих встреч список объясняет причину и закрывается нажатием вне списка',async()=>{
+  const onPropose=jest.fn();const ui=await render(<MapScreen filters={filters} onBook={jest.fn()} onPropose={onPropose} onFilters={jest.fn()}/>);
+  await waitFor(()=>expect(ui.getByText('Ресторан 0')).toBeOnTheScreen());
+  await fireEvent.press(ui.getByRole('button',{name:'Выбрать место'}));
+  expect(ui.getByText('Нет встреч с открытым голосованием, в которые можно добавить это место.')).toBeOnTheScreen();
+  await fireEvent.press(ui.getByRole('button',{name:'Закрыть список встреч'}));
+  expect(ui.queryByText('Добавить во встречу')).toBeNull();
+  expect(onPropose).not.toHaveBeenCalled();
+});
+
+test('При выборе другой метки список закрывается, а добавленное ранее место снова доступно для другой метки',async()=>{
+  const meeting={...makeController().meeting,candidates:[restaurantView(places[0])]};
+  const ui=await render(<MapScreen meetings={[meeting]} filters={filters} onBook={jest.fn()} onFilters={jest.fn()}/>);
+  await waitFor(()=>expect(ui.getByText('Ресторан 0')).toBeOnTheScreen());
+  await fireEvent.press(ui.getByRole('button',{name:'Выбрать место'}));
+  await fireEvent(ui.getByTestId('map'),'event',{type:'select',id:'place-1'});
+  expect(ui.queryByText('Добавить во встречу')).toBeNull();
+  await fireEvent.press(ui.getByRole('button',{name:'Выбрать место'}));
+  expect(ui.getByRole('button',{name:/Добавить в «Ужин с командой»/})).toBeOnTheScreen();
+});
+
+test('Карта вариантов встречи сохраняет действие бронирования',async()=>{
+  const onBook=jest.fn(),candidate=restaurantView(places[0]);
+  const meeting={...makeController().meeting,candidates:[candidate]};
+  const ui=await render(<MapScreen mode="meeting" meeting={meeting} filters={filters} onBook={onBook} onFilters={jest.fn()}/>);
+  await waitFor(()=>expect(ui.getByText('Ресторан 0')).toBeOnTheScreen());
+  await fireEvent.press(ui.getByRole('button',{name:'Забронировать'}));
+  expect(onBook).toHaveBeenCalledWith(expect.objectContaining({id:'place-0'}));
+  expect(ui.queryByText('Добавить во встречу')).toBeNull();
 });
 test('Ошибка каталога показана явно',async()=>{
   jest.mocked(api).mockRejectedValue(new Error('Каталог недоступен'));

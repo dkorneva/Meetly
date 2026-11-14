@@ -3,6 +3,7 @@ import {
   type StyleProp,
   type TextStyle,
   type ViewStyle,
+  type AccessibilityState,
 } from "react-native";
 import { Icon, type IconName } from "../Icon";
 import { Text, useTheme, useThemedStyles } from "../../theme/index";
@@ -28,6 +29,7 @@ export function Button({
   icon,
   textStyle,
   stopPropagation = false,
+  accessibilityState,
 }: {
   title: string;
   onPress: () => void;
@@ -38,6 +40,7 @@ export function Button({
   icon?: IconName;
   textStyle?: StyleProp<TextStyle>;
   stopPropagation?: boolean;
+  accessibilityState?: AccessibilityState;
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles); // стили кнопки
@@ -45,6 +48,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ ...accessibilityState, disabled }}
       disabled={disabled}
       onPress={(event) => {
         if (stopPropagation) event.stopPropagation();
