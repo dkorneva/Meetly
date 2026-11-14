@@ -1,7 +1,17 @@
-import { Pressable, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
 import { Icon, type IconName } from "../Icon";
 import { Text, useTheme, useThemedStyles } from "../../theme/index";
-import { createStyles, getButtonState, getButtonLabelColor, type ButtonVariant } from "./Button.styles";
+import {
+  createStyles,
+  getButtonState,
+  getButtonLabelColor,
+  type ButtonVariant,
+} from "./Button.styles";
 
 /**
  * Показывает кнопку выбранного варианта оформления; disabled блокирует нажатия.
@@ -17,6 +27,7 @@ export function Button({
   disabled = false,
   icon,
   textStyle,
+  stopPropagation = false,
 }: {
   title: string;
   onPress: () => void;
@@ -26,6 +37,7 @@ export function Button({
   disabled?: boolean;
   icon?: IconName;
   textStyle?: StyleProp<TextStyle>;
+  stopPropagation?: boolean;
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles); // стили кнопки
@@ -34,7 +46,10 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
-      onPress={onPress}
+      onPress={(event) => {
+        if (stopPropagation) event.stopPropagation();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.button,
         getButtonState(colors, variant, disabled, pressed),

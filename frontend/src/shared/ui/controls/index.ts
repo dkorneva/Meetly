@@ -5,3 +5,4 @@ export { Field } from "./Field";
 export { Avatars } from "./Avatars";
 export { Chip } from "./Chip";
 export { Row } from "./Row";
+export { Select } from "./Select";
