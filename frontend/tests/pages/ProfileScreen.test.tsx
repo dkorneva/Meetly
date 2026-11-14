@@ -3,17 +3,10 @@ import { ProfileScreen } from "../../src/pages/profile";
 import { makeController } from ".././fixtures";
 
 describe("ProfileScreen", () => {
-  test.each([false, true])("переключает напоминания из состояния %s", async (enabled) => {
-    const c = makeController();
-    c.store.reminders = enabled;
-    const ui = await render(<ProfileScreen controller={c} />);
-    const toggle = ui.getByRole("switch", { name: "Напоминания" });
-    expect(toggle.props.accessibilityState.checked).toBe(enabled);
-
-    await fireEvent.press(toggle);
-
-    expect(c.update).toHaveBeenCalledTimes(1);
-    expect(c.update).toHaveBeenCalledWith({ reminders: !enabled });
+  test("напоминания отсутствуют в настройках", async () => {
+    const ui = await render(<ProfileScreen controller={makeController()} />);
+    expect(ui.queryByRole("switch", {name:"Напоминания"})).toBeNull();
+    expect(ui.queryByText("Уведомления о встречах")).toBeNull();
   });
 
   test("передаёт включение тёмной темы", async () => {

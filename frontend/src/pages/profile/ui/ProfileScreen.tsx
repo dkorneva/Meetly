@@ -66,7 +66,7 @@ export default function ProfileScreen({
       </View>
       <View style={styles.content}>
         <Text style={styles.sectionLabel}>ПОДКЛЮЧЕНИЯ</Text>
-        {/* Показываем сохранённый переключатель календаря; сам экспорт пока не реализован. */}
+        {/* Экспортируется актуальная встреча с сервера в формате ICS. */}
         <View style={[uiStyles.card, styles.calendarCard]}>
           <Row style={styles.calendarRow}>
             <View style={styles.settingIcon}>
@@ -95,39 +95,33 @@ export default function ProfileScreen({
           {(
             [
               {
-                icon: "bell",
-                title: "Напоминания",
-                sub: "Уведомления о встречах",
-                value: store.reminders,
-                onChange: (v: boolean) => update({ reminders: v }),
-              },
-              {
                 icon: "moon",
                 title: "Тёмная тема",
                 sub: "Тёмное оформление",
                 value: store.dark,
                 onChange: (v: boolean) => update({ dark: v }),
               },
-            ] as const // Сохраняем точные типы значений, например имён иконок.
-          ).map((item, i) => (
-            <Row
-              key={item.title}
-              style={[styles.settingRow, getSettingDivider(i)]}
-            >
-              <View style={styles.settingIcon}>
-                <Icon name={item.icon} color={colors.primaryText} />
-              </View>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>{item.title}</Text>
-                <Text style={styles.settingDescription}>{item.sub}</Text>
-              </View>
-              <Toggle
-                value={item.value}
-                onValueChange={item.onChange}
-                accessibilityLabel={item.title}
-              />
-            </Row>
-          ))}
+            ] as const
+          ) // Сохраняем точные типы значений, например имён иконок.
+            .map((item, i) => (
+              <Row
+                key={item.title}
+                style={[styles.settingRow, getSettingDivider(i)]}
+              >
+                <View style={styles.settingIcon}>
+                  <Icon name={item.icon} color={colors.primaryText} />
+                </View>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>{item.title}</Text>
+                  <Text style={styles.settingDescription}>{item.sub}</Text>
+                </View>
+                <Toggle
+                  value={item.value}
+                  onValueChange={item.onChange}
+                  accessibilityLabel={item.title}
+                />
+              </Row>
+            ))}
         </View>
         {/* Сам выход выполняет родитель через переданную функцию signOut. */}
         <Pressable onPress={signOut} style={styles.signOutButton}>
