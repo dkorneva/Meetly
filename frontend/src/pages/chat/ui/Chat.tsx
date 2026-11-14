@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { continuesGroup, dayLabel, messageDay } from "../model/messages";
 import {
   Image,
   KeyboardAvoidingView,
@@ -12,9 +13,13 @@ import { reactionCount } from "../../../entities/meeting";
 import { Avatars, Row } from "../../../shared/ui/controls/index";
 import { useUiStyles } from "../../../shared/ui/shared.styles";
 import { Icon } from "../../../shared/ui/Icon";
-import { restaurants } from "../../../entities/meeting";
 import type { Meeting, Message } from "../../../entities/meeting";
-import { Text, TextInput, useTheme, useThemedStyles } from "../../../shared/theme/index";
+import {
+  Text,
+  TextInput,
+  useTheme,
+  useThemedStyles,
+} from "../../../shared/theme/index";
 import {
   createStyles,
   getMessageAlignment,
@@ -38,6 +43,8 @@ export default function Chat({
   onSend,
   onLike,
   onAttach,
+  onLoadOlder,
+  hasOlderMessages,
 }: {
   meeting: Meeting;
   messages: Message[];
@@ -48,20 +55,25 @@ export default function Chat({
   onSend: (text: string) => void;
   onLike: (id: string) => void;
   onAttach: () => void;
+  onLoadOlder?: () => void;
+  hasOlderMessages?: boolean;
 }) {
   // Цвета текущей темы, стили чата и общие стили интерфейса.
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const uiStyles = useUiStyles();
 
+  const visibleMessages = messages.filter(m => !(m.kind === "system" && m.text === "Организатор подтвердил бронирование после связи с заведением"));
   const [text, setText] = useState(""); // Текст, который пользователь ещё не отправил.
   // Ссылка на область сообщений позволяет управлять прокруткой из кода.
-  const scroll = useRef<import("react-native").ScrollView>(null);
+  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const followLatest = useRef(true);
   useEffect(() => {
     // Прокручиваем к последнему сообщению при открытии и изменении их количества.
     // ?. вызывает метод только тогда, когда ссылка уже указывает на компонент.
-    scroll.current?.scrollToEnd({ animated: true });
-  }, [messages.length]);
+    followLatest.current = true;
+    scroll.current?.scrollToEnd({ animated: false });
+  }, [messages[messages.length - 1]?.id]);
   /**
    * Отправляет непустой текст без пробелов по краям и очищает поле ввода.
    *
@@ -75,41 +87,41 @@ export default function Chat({
     }
   }
   return (
-  // автоматически сдвигает, изменяет высоту или добавляет отступ (padding) своему содержимому, чтобы поля ввода не перекрывались виртуальной клавиатурой на экране   
+    // автоматически сдвигает, изменяет высоту или добавляет отступ (padding) своему содержимому, чтобы поля ввода не перекрывались виртуальной клавиатурой на экране
     <KeyboardAvoidingView
       style={styles.root}
       // На iOS добавляем отступ при появлении клавиатуры.
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Карточка ресторана, который сейчас лидирует в голосовании. */}
-      <Pressable onPress={onLeader} style={styles.leaderCard}>
+      <Pressable onPress={onLeader} style={styles.leaderCard} accessibilityRole="button" accessibilityLabel="Открыть лидера голосования">
         <Row>
-          <View>
+          <View style={styles.leaderText}>
             <Text style={styles.leaderLabel}>ЛИДИРУЕТ</Text>
-            <Text style={styles.leaderTitle}>
-              {leader} ·{" "}
-              {
-                // Берём все голоса и считаем те, что отданы за ресторан-лидер.
-                Object.values(meeting.votes).filter(
-                  (v) => v === restaurants.find((r) => r.name === leader)?.id,
-                ).length
-              }{" "}
-              голоса
-            </Text>
+            <Text style={styles.leaderTitle}>{leader}, {Object.values(meeting.votes).filter(v => v === meeting.candidates?.find(r => r.name === leader)?.id).length} голоса</Text>
           </View>
           <Icon name="chevron" color={colors.primaryText} />
         </Row>
       </Pressable>
       <ScrollView
         ref={scroll}
+        onLayout={() => { if (followLatest.current) scroll.current?.scrollToEnd({ animated: false }); }}
+        onScrollBeginDrag={() => { followLatest.current = false; }}
+        onContentSizeChange={() => { if (followLatest.current) scroll.current?.scrollToEnd({ animated: false }); }}
         contentContainerStyle={styles.messagesContent}
         keyboardShouldPersistTaps="handled" // Нажатия на обработанные элементы не скрывают клавиатуру.
       >
-        <Text style={styles.dateBadge}>Сегодня</Text>
+        {hasOlderMessages && <Pressable onPress={() => { followLatest.current = false; onLoadOlder?.(); }} accessibilityRole="button" style={styles.loadOlder}>
+          <Text style={styles.leaderLabel}>Загрузить более ранние сообщения</Text>
+        </Pressable>}
         {/* Для каждого сообщения выбираем вид: системное, выбор места или обычное.
             key={m.id} помогает React различать сообщения при обновлении списка. */}
-        {messages.map((m) =>
-          m.kind === "system" ? (
+        {visibleMessages.map((m, index) => {
+          const previous = visibleMessages[index - 1], grouped = continuesGroup(previous, m);
+          const showDay = !!m.createdAt && (!previous || messageDay(previous) !== messageDay(m));
+          return <Fragment key={m.id}>
+          {showDay && <Text style={styles.dateBadge}>{dayLabel(m)}</Text>}
+          {m.kind === "system" ? (
             <Text key={m.id} style={styles.systemMessage}>
               {m.text}
             </Text>
@@ -119,7 +131,7 @@ export default function Chat({
                 <View style={styles.confirmationIcon}>
                   <Icon name="check" color={colors.onPrimary} size={18} />
                 </View>
-                <View>
+                <View style={styles.confirmationText}>
                   <Text style={styles.confirmationTitle}>Место выбрано</Text>
                   <Text
                     style={[uiStyles.muted, styles.confirmationDescription]}
@@ -133,17 +145,22 @@ export default function Chat({
             <View
               key={m.id}
               // mine показывает, наше ли сообщение; от этого зависит его расположение.
-              style={[styles.messageContainer, getMessageAlignment(m.mine)]}
+              style={[styles.messageContainer, getMessageAlignment(m.mine), grouped && styles.groupContinuation]}
             >
-              <Text style={[styles.messageMeta, getMessageMetaInset(m.mine)]}>
+              {!grouped && <Text testID={`message-author-${m.id}`} style={[styles.messageMeta, getMessageMetaInset(m.mine)]}>
                 {m.name}
-                {m.name === "Аня" ? " · " : " "}
-                {m.time}
-              </Text>
+              </Text>}
               <Row style={styles.messageRow}>
                 {/* Аватар показываем только у чужих сообщений. */}
-                {!m.mine && <Avatars names={[m.name]} size={24} />}
+                {!m.mine && (grouped ? <View style={styles.avatarSpace} /> : <Avatars names={[m.name]} size={24} />)}
                 <Pressable
+                  onPress={() => {
+                    if (m.attachment)
+                      void import("../../../shared/api/device").then(
+                        ({ openExternalLink }) =>
+                          openExternalLink(m.attachment!.uri),
+                      );
+                  }}
                   // Долгое нажатие вызывает обработчик реакции на это сообщение.
                   onLongPress={() => onLike(m.id)}
                   style={[
@@ -160,6 +177,7 @@ export default function Chat({
                     />
                   )}
                   <Text style={styles.messageText}>{m.text}</Text>
+                  <Text style={styles.messageTime}>{m.time}</Text>
                 </Pressable>
               </Row>
               {/* Если реакции есть, показываем сердечко и их количество. */}
@@ -179,8 +197,8 @@ export default function Chat({
                 </Pressable>
               )}
             </View>
-          ),
-        )}
+          )}</Fragment>;
+        })}
       </ScrollView>
       {/* Панель ввода: прикрепление файла, текст сообщения и кнопка отправки. */}
       <Row style={styles.composer}>

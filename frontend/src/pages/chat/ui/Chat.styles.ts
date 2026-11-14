@@ -11,6 +11,12 @@ import type { ThemeColors } from "../../../shared/theme/index";
 export const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     root: { flex: 1 },
+    loadOlder: { alignSelf: "center", padding: 10 },
+    leaderText: { flex: 1, marginHorizontal: 10 },
+    confirmationText: { flex: 1 },
+    groupContinuation: { marginTop: -9 },
+    avatarSpace: { width: 24 },
+    messageTime: { alignSelf: "flex-end", fontSize: 10, color: colors.textSecondary, marginTop: 4 },
     leaderCard: {
       marginHorizontal: 20,
       marginTop: 12,
