@@ -71,7 +71,6 @@ export default function MapScreen({
   const [meetingPickerOpen, setMeetingPickerOpen] = useState(false);
   const [addingPlace, setAddingPlace] = useState(false);
   const [actionSize, setActionSize] = useState({ width: 220, height: 44 });
-  const [mapWidth, setMapWidth] = useState(320);
   const [center, setCenter] = useState({
     latitude: initialRestaurant?.latitude ?? 55.7558,
     longitude: initialRestaurant?.longitude ?? 37.6176,
@@ -183,7 +182,7 @@ export default function MapScreen({
     }
   }
   return (
-    <View style={styles.root} onLayout={event => setMapWidth(event.nativeEvent.layout.width)} accessibilityLabel={mode==="meeting"?`Вариантов встречи: ${items.length}`:`Найдено: ${items.length}, Садовое кольцо`}>
+    <View style={styles.root} accessibilityLabel={mode==="meeting"?`Вариантов встречи: ${items.length}`:`Найдено: ${items.length}, Садовое кольцо`}>
       <RestaurantMap
         items={items}
         mode={mode}
@@ -349,9 +348,8 @@ export default function MapScreen({
           </>
         )}
       </View>
-      {meetingPickerOpen && <View style={[styles.meetingPicker, { width: Math.min(Math.max(280, actionSize.width), mapWidth - 64), bottom: 36 + actionSize.height }]}>
+      {meetingPickerOpen && <View style={[styles.meetingPicker, { width: actionSize.width, bottom: 36 + actionSize.height }]}>
         <View style={styles.meetingPickerHeader}>
-          <Icon name="calendar" size={17} color={colors.primaryText} />
           <Text style={styles.meetingPickerTitle}>Добавить во встречу</Text>
           {!!availableMeetings.length && <View style={styles.meetingPickerCount}>
             <Text style={styles.meetingPickerCountLabel}>{availableMeetings.length}</Text>
