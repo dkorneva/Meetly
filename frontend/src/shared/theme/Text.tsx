@@ -15,7 +15,6 @@ const typography = Native.StyleSheet.create({
   body: { fontFamily: "Inter", fontSize: 14, includeFontPadding: false },
 });
 
-
 // <Native.Text, Native.TextProps> — типы TypeScript:
 // первый описывает объект, доступный через ref, второй — допустимые свойства.
 // props — переданные свойства (например, children, style, numberOfLines).
@@ -27,7 +26,10 @@ const typography = Native.StyleSheet.create({
  * @param ref - Значение ref, используемое для вычисления результата.
  * @returns Элементы интерфейса React.
  */
-export const Text = forwardRef<Native.Text, Native.TextProps>((props, ref) => {
+export const Text = forwardRef<
+  React.ComponentRef<typeof Native.Text>,
+  Native.TextProps
+>((props, ref) => {
   // Из объекта текущей темы берём только colors.
   // При смене темы компонент получит новые цвета и обновится.
   const { colors } = useTheme();
@@ -45,7 +47,6 @@ export const Text = forwardRef<Native.Text, Native.TextProps>((props, ref) => {
   );
 });
 
-
 // Здесь ref ссылается на Native.TextInput, а свойства имеют тип TextInputProps.
 /**
  * Показывает поле ввода с цветами темы и передаёт ref внутреннему полю.
@@ -54,23 +55,24 @@ export const Text = forwardRef<Native.Text, Native.TextProps>((props, ref) => {
  * @param ref - Значение ref, используемое для вычисления результата.
  * @returns Элементы интерфейса React.
  */
-export const TextInput = forwardRef<Native.TextInput, Native.TextInputProps>(
-  (props, ref) => {
-    const { colors } = useTheme();
-    return (
-      <Native.TextInput
-        // Цвет подсказки, видимой, пока поле пустое.
-        placeholderTextColor={colors.placeholder}
-        // Цвет выделения текста; на поддерживаемых платформах — также курсора.
-        selectionColor={colors.primaryText}
-        // Передаём свойства, например value, onChangeText, placeholder.
-        // Они идут ПОСЛЕ цветов выше, поэтому позволяют заменить эти цвета.
-        {...props}
-        // Через эту ссылку родитель может, например, вызвать focus() или blur().
-        ref={ref}
-        // Как и у Text, явно переданный style имеет приоритет над стилями темы.
-        style={[typography.body, { color: colors.text }, props.style]}
-      />
-    );
-  },
-);
+export const TextInput = forwardRef<
+  React.ComponentRef<typeof Native.TextInput>,
+  Native.TextInputProps
+>((props, ref) => {
+  const { colors } = useTheme();
+  return (
+    <Native.TextInput
+      // Цвет подсказки, видимой, пока поле пустое.
+      placeholderTextColor={colors.placeholder}
+      // Цвет выделения текста; на поддерживаемых платформах — также курсора.
+      selectionColor={colors.primaryText}
+      // Передаём свойства, например value, onChangeText, placeholder.
+      // Они идут ПОСЛЕ цветов выше, поэтому позволяют заменить эти цвета.
+      {...props}
+      // Через эту ссылку родитель может, например, вызвать focus() или blur().
+      ref={ref}
+      // Как и у Text, явно переданный style имеет приоритет над стилями темы.
+      style={[typography.body, { color: colors.text }, props.style]}
+    />
+  );
+});

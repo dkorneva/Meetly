@@ -4,7 +4,7 @@ import { darkColors, lightColors, type ThemeColors } from "./colors";
 
 // Описываем, какие данные есть у темы:
 // dark — включена ли тёмная тема; colors — её набор цветов.
-export type Theme = { dark: boolean; colors: ThemeColors };
+type Theme = { dark: boolean; colors: ThemeColors };
 // Заранее создаём два готовых объекта темы.
 const lightTheme: Theme = { dark: false, colors: lightColors };
 const darkTheme: Theme = { dark: true, colors: darkColors };
