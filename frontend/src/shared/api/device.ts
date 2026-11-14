@@ -1,7 +1,7 @@
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-// Linking открывает ссылки, Share вызывает стандартное меню «Поделиться».
-import { Linking,Share } from "react-native";
+// Linking открывает ссылки в приложениях устройства.
+import { Linking } from "react-native";
 
 // Открываем выбор файла для сообщения.
 // Promise описывает будущий результат: вложение или null, если выбор отменён.
@@ -11,9 +11,12 @@ import { Linking,Share } from "react-native";
  * @returns Promise с данными файла или null при отмене.
  * @throws При ошибке системного API или восстановления данных возвращённый Promise отклоняется.
  */
-export async function chooseAttachment(): Promise<
-  { name: string; uri: string; image: boolean } | null
-> {
+export async function chooseAttachment(): Promise<{
+  name: string;
+  uri: string;
+  image: boolean;
+  mimeType: string;
+} | null> {
   const result = await DocumentPicker.getDocumentAsync({
     // Копируем выбранный файл во временную папку приложения для дальнейшего доступа.
     copyToCacheDirectory: true,
@@ -25,6 +28,7 @@ export async function chooseAttachment(): Promise<
   // Возвращаем только сведения, нужные чату: имя, адрес файла и признак изображения.
   return {
     name: asset.name,
+    mimeType: asset.mimeType ?? "application/octet-stream",
     uri: asset.uri, // Адрес, по которому приложение обращается к выбранному файлу.
     // Тип изображения начинается с "image/", например "image/png".
     // ?. проверяет строку, только если mimeType есть; ?? false подставляет false, если его нет.
@@ -38,24 +42,24 @@ export async function chooseAttachment(): Promise<
  * @returns Promise с URI изображения или null при отмене.
  * @throws При ошибке системного API или восстановления данных возвращённый Promise отклоняется.
  */
-export async function chooseAvatar(): Promise<string | null> {
+export async function chooseAvatar(): Promise<{
+  uri: string;
+  name: string;
+  mimeType: string;
+} | null> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"], // Разрешаем выбирать только изображения.
     allowsEditing: true, // Включаем редактирование там, где оно поддерживается.
     aspect: [1, 1], // Квадратная обрезка на Android; на iOS обрезка и так квадратная.
     quality: 0.8, // Запрашиваем качество 80%; результат зависит от платформы и формата.
   });
-  return result.canceled ? null : result.assets[0].uri;
-}
-/**
- * Открывает системное меню отправки переданного текста.
- *
- * @param message - Сообщение для обработки.
- * @returns Результат операции; для обработчиков без результата — void.
- * @throws При ошибке системного API или восстановления данных возвращённый Promise отклоняется.
- */
-export function shareText(message: string) {
-  return Share.share({ message });
+  if (result.canceled) return null;
+  const asset = result.assets[0];
+  return {
+    uri: asset.uri,
+    name: asset.fileName ?? "avatar.jpg",
+    mimeType: asset.mimeType ?? "image/jpeg",
+  };
 }
 
 // Просим систему открыть адрес: например, сайт в браузере или ссылку в другом приложении.
