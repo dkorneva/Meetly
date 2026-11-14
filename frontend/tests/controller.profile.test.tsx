@@ -1,38 +1,21 @@
 import { act } from "@testing-library/react-native";
-import { controllerStore, renderController } from "./controllerFixture";
-
+import { api } from "../src/shared/api/client";
+import { renderController } from "./controllerFixture";
 jest.mock("expo-font", () => ({ useFonts: () => [true, null] }));
-
-test("сохраняет имя и почту профиля и закрывает окно редактирования", async () => {
-  const store = controllerStore();
-  const { result } = await renderController(store);
-  await act(() => {
-    result.current.setDialog("profile");
-    result.current.setEditName(" Мария ");
-    result.current.setEditEmail("maria@example.ru");
-  });
-
-  await act(() => result.current.saveProfile());
-
-  expect(result.current.store).toEqual({ ...store, name: "Мария", email: "maria@example.ru" });
-  expect(result.current.dialog).toBeNull();
+test("настройки профиля сохраняются на сервере", async () => {
+  const { result } = await renderController();
+  await act(() => result.current.update({ dark: true }));
+  expect(api).toHaveBeenCalledWith("/users/me", "PATCH", { dark: true });
 });
-
-test.each([
-  ["   ", "maria@example.ru"],
-  ["Мария", "непочта"],
-])("не сохраняет некорректный профиль: %s / %s", async (name, email) => {
-  const store = controllerStore();
-  const { result } = await renderController(store);
+test("имя и почта передаются серверу после редактирования", async () => {
+  const { result } = await renderController();
   await act(() => {
-    result.current.setDialog("profile");
-    result.current.setEditName(name);
-    result.current.setEditEmail(email);
+    result.current.setEditName("Новое Имя");
+    result.current.setEditEmail("new@example.com");
   });
-
   await act(() => result.current.saveProfile());
-
-  expect(result.current.store).toEqual(store);
-  expect(result.current.dialog).toBe("profile");
-  expect(result.current.toast).toMatchObject({ type: "error", message: "Проверьте имя и электронную почту" });
+  expect(api).toHaveBeenCalledWith("/users/me", "PATCH", {
+    name: "Новое Имя",
+    email: "new@example.com",
+  });
 });
