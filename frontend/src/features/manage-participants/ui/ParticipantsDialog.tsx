@@ -2,7 +2,12 @@ import type { DialogName } from "../../../shared/config/dialogs";
 import type { Meeting } from "../../../entities/meeting";
 
 import { Text, useTheme, useThemedStyles } from "../../../shared/theme/index";
-import { Avatars, Button, IconButton, Row } from "../../../shared/ui/controls/index";
+import {
+  Avatars,
+  Button,
+  IconButton,
+  Row,
+} from "../../../shared/ui/controls/index";
 import { createStyles } from "./ParticipantsDialog.styles";
 
 /**
@@ -26,17 +31,17 @@ export default function ParticipantsDialog({
   const { setDialog, meeting, removeParticipant } = controller;
   return (
     <>
-      {meeting.participants.map((n) => (
-        <Row key={n}>
+      {(meeting.members ?? []).map((member) => (
+        <Row key={member.id}>
           <Row style={styles.participantInfo}>
-            <Avatars names={[n]} />
-            <Text style={styles.participantName}>{n}</Text>
+            <Avatars names={[member.name]} />
+            <Text style={styles.participantName}>{member.name}</Text>
           </Row>
-          {n !== "Аня" && (
+          {member.id !== meeting.ownerId && (
             <IconButton
               name="close"
               color={colors.textMuted}
-              onPress={() => removeParticipant(n)}
+              onPress={() => removeParticipant(member.id)}
             />
           )}
         </Row>

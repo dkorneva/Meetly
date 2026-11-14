@@ -1,8 +1,5 @@
-
-
 import { useState } from "react";
 import type { Meeting } from "../../../entities/meeting";
-import { validateParticipant } from "../../../shared/lib/participants";
 import { Text, useTheme } from "../../../shared/theme/index";
 import { Button, Field } from "../../../shared/ui/controls/index";
 import { useUiStyles } from "../../../shared/ui/shared.styles";
@@ -28,25 +25,40 @@ export default function InviteDialog({
   const { colors } = useTheme();
   const [attempted, setAttempted] = useState(false);
 
-  const { inviteParticipant, inviteName, setInviteName, share, meeting } = controller;
-  const error = validateParticipant(inviteName, meeting.participants);
+  const { inviteParticipant, inviteName, setInviteName, share } = controller;
+  const error = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteName.trim())
+    ? ""
+    : "Введите email зарегистрированного участника";
   return (
     <>
       <Text style={uiStyles.muted}>
         Добавьте участника во встречу или отправьте приглашение друзьям.
       </Text>
       <Field
-        label="Имя участника"
+        label="Email участника"
         value={inviteName}
         onChangeText={setInviteName}
-        placeholder="Например, Саша"
+        placeholder="friend@example.com"
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
-      {attempted && !!error && <Text accessibilityRole="alert" style={{ color: colors.accentText }}>{error}</Text>}
-      <Button title="Добавить участника" onPress={() => {
-        setAttempted(true);
-        if (!error) inviteParticipant();
-      }} />
-      <Button title="Поделиться приглашением" variant="outline" onPress={share} />
+      {attempted && !!error && (
+        <Text accessibilityRole="alert" style={{ color: colors.accentText }}>
+          {error}
+        </Text>
+      )}
+      <Button
+        title="Добавить участника"
+        onPress={() => {
+          setAttempted(true);
+          if (!error) inviteParticipant();
+        }}
+      />
+      <Button
+        title="Поделиться приглашением"
+        variant="outline"
+        onPress={share}
+      />
     </>
   );
 }
