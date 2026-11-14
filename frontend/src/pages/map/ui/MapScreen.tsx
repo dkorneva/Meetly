@@ -71,6 +71,7 @@ export default function MapScreen({
   const [meetingPickerOpen, setMeetingPickerOpen] = useState(false);
   const [addingPlace, setAddingPlace] = useState(false);
   const [actionSize, setActionSize] = useState({ width: 220, height: 44 });
+  const [mapWidth, setMapWidth] = useState(320);
   const [center, setCenter] = useState({
     latitude: initialRestaurant?.latitude ?? 55.7558,
     longitude: initialRestaurant?.longitude ?? 37.6176,
@@ -182,7 +183,7 @@ export default function MapScreen({
     }
   }
   return (
-    <View style={styles.root} accessibilityLabel={mode==="meeting"?`Вариантов встречи: ${items.length}`:`Найдено: ${items.length}, Садовое кольцо`}>
+    <View style={styles.root} onLayout={event => setMapWidth(event.nativeEvent.layout.width)} accessibilityLabel={mode==="meeting"?`Вариантов встречи: ${items.length}`:`Найдено: ${items.length}, Садовое кольцо`}>
       <RestaurantMap
         items={items}
         mode={mode}
@@ -302,20 +303,34 @@ export default function MapScreen({
                 const { width, height } = event.nativeEvent.layout;
                 setActionSize({ width, height });
               }}>
-                <Button
-                  title={canBook ? "Забронировать" : "Выбрать место"}
+                {canBook ? <Button
+                  title="Забронировать"
                   disabled={active.available === false || addingPlace}
-                  style={[styles.bookingButton, !canBook && styles.meetingPickerButton]}
+                  style={styles.bookingButton}
                   textStyle={styles.actionLabel}
-                  accessibilityState={canBook ? undefined : { expanded: meetingPickerOpen }}
-                  onPress={() => {
-                    if (canBook) onBook(active);
-                    else setMeetingPickerOpen(!meetingPickerOpen);
-                  }}
-                />
-                {!canBook && <View pointerEvents="none" style={[styles.meetingPickerChevron, { transform: [{ rotate: meetingPickerOpen ? "-90deg" : "90deg" }] }]}>
-                  <Icon name="chevron" size={12} color={colors.onPrimary} />
-                </View>}
+                  onPress={() => onBook(active)}
+                /> : <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Выбрать место"
+                  accessibilityState={{ expanded: meetingPickerOpen, disabled: active.available === false || addingPlace }}
+                  disabled={active.available === false || addingPlace}
+                  onPress={() => setMeetingPickerOpen(!meetingPickerOpen)}
+                  style={({ pressed }) => [
+                    styles.meetingPickerButton,
+                    meetingPickerOpen && styles.meetingPickerButtonOpen,
+                    pressed && styles.meetingPickerButtonPressed,
+                    (active.available === false || addingPlace) && styles.meetingPickerButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.meetingPickerButtonLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+                    Выбрать место
+                  </Text>
+                  <View style={styles.meetingPickerChevron}>
+                    <View style={{ transform: [{ rotate: meetingPickerOpen ? "-90deg" : "90deg" }] }}>
+                      <Icon name="chevron" size={16} color={colors.onPrimary} />
+                    </View>
+                  </View>
+                </Pressable>}
               </View>
             </Row>
           </>
@@ -334,8 +349,14 @@ export default function MapScreen({
           </>
         )}
       </View>
-      {meetingPickerOpen && <View style={[styles.meetingPicker, { width: Math.max(220, actionSize.width), bottom: 34 + actionSize.height }]}>
-        <Text style={styles.meetingPickerTitle}>Добавить во встречу</Text>
+      {meetingPickerOpen && <View style={[styles.meetingPicker, { width: Math.min(Math.max(280, actionSize.width), mapWidth - 64), bottom: 36 + actionSize.height }]}>
+        <View style={styles.meetingPickerHeader}>
+          <Icon name="calendar" size={17} color={colors.primaryText} />
+          <Text style={styles.meetingPickerTitle}>Добавить во встречу</Text>
+          {!!availableMeetings.length && <View style={styles.meetingPickerCount}>
+            <Text style={styles.meetingPickerCountLabel}>{availableMeetings.length}</Text>
+          </View>}
+        </View>
         <ScrollView style={styles.meetingPickerList} keyboardShouldPersistTaps="handled">
           {availableMeetings.map(item => <Pressable
             key={item.id}
@@ -344,11 +365,16 @@ export default function MapScreen({
             style={({ pressed }) => [styles.meetingOption, pressed && styles.meetingOptionPressed]}
             onPress={() => void chooseMeeting(item)}
           >
-            <Text style={styles.meetingOptionTitle}>{item.title}</Text>
-            <Text style={styles.meetingOptionDate}>{item.date.split("-").reverse().join(".")} · {item.time}</Text>
+            <View style={styles.meetingOptionInfo}>
+              <Text style={styles.meetingOptionTitle} numberOfLines={2}>{item.title}</Text>
+              <Text style={styles.meetingOptionDate}>{item.date.split("-").reverse().join(".")} · {item.time}</Text>
+            </View>
+            <View style={styles.meetingOptionAdd}>
+              <Icon name="plus" size={16} color={colors.primaryText} />
+            </View>
           </Pressable>)}
           {!availableMeetings.length && <Text style={styles.meetingPickerEmpty}>
-            Нет встреч с открытым голосованием, в которые можно добавить это место.
+            Нет встреч с открытым голосованием
           </Text>}
         </ScrollView>
       </View>}

@@ -57,7 +57,7 @@ test('Без подходящих встреч список объясняет �
   const onPropose=jest.fn();const ui=await render(<MapScreen filters={filters} onBook={jest.fn()} onPropose={onPropose} onFilters={jest.fn()}/>);
   await waitFor(()=>expect(ui.getByText('Ресторан 0')).toBeOnTheScreen());
   await fireEvent.press(ui.getByRole('button',{name:'Выбрать место'}));
-  expect(ui.getByText('Нет встреч с открытым голосованием, в которые можно добавить это место.')).toBeOnTheScreen();
+  expect(ui.getByText('Нет встреч с открытым голосованием')).toBeOnTheScreen();
   await fireEvent.press(ui.getByRole('button',{name:'Закрыть список встреч'}));
   expect(ui.queryByText('Добавить во встречу')).toBeNull();
   expect(onPropose).not.toHaveBeenCalled();
