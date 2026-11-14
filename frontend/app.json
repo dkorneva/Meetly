@@ -15,6 +15,12 @@
     "web": {
       "name": "Meetly",
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-status-bar",
+      "expo-secure-store"
+    ],
+    "scheme": "meetly"
   }
 }
