@@ -2,7 +2,7 @@
 
 Сгенерировано из TypeScript. Включены экспортируемые и внутренние именованные функции, обработчики, компоненты и функции стилей. Анонимные обратные вызовы описываются в составе принимающих их функций.
 
-Функций: 144. Классов: 0. В проекте используются функциональные компоненты React; классов нет.
+Функций: 164. Классов: 0. В проекте используются функциональные компоненты React; классов нет.
 
 ## src/shared/theme/ThemeProvider.tsx
 
@@ -39,7 +39,7 @@ useThemedStyles<T>(createStyles: (colors: ThemeColors) => T): T
 Показывает текст с Inter и цветом темы; переданный style имеет приоритет.
 
 ```typescript
-Text(props: Native.TextProps, ref: React.ForwardedRef<Native.Text>): React.JSX.Element
+Text(props: Native.TextProps, ref: React.ForwardedRef<ReactNativeElement>): React.JSX.Element
 ```
 
 ### TextInput
@@ -47,7 +47,7 @@ Text(props: Native.TextProps, ref: React.ForwardedRef<Native.Text>): React.JSX.E
 Показывает поле ввода с цветами темы и передаёт ref внутреннему полю.
 
 ```typescript
-TextInput(props: Native.TextInputProps, ref: React.ForwardedRef<Native.TextInput>): React.JSX.Element
+TextInput(props: Native.TextInputProps, ref: React.ForwardedRef<_TextInputInstance>): React.JSX.Element
 ```
 
 ## src/app/App.styles.ts
@@ -57,7 +57,25 @@ TextInput(props: Native.TextInputProps, ref: React.ForwardedRef<Native.TextInput
 Создаёт стили App; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { viewport: { flex: number; alignItems: "center"; }; app: { flex: number; width: "100%"; maxWidth: number; backgroundColor: string; }; loadingScreen: { flex: number; alignItems: "center"; justifyContent: "center"; }; loadingLogo: { fontSize: number; color: string; fontWeight: "700"; }; viewportBackground: { backgroundColor: string; }; appBackground: { backgroundColor: string; }; }
+createStyles(colors: ThemeColors): Readonly<{ viewport: { flex: number; alignItems: "center"; }; app: { flex: number; width: string; maxWidth: number; backgroundColor: string; }; loadingScreen: { flex: number; alignItems: "center"; justifyContent: "center"; }; loadingLogo: { fontSize: number; color: string; fontWeight: "700"; }; viewportBackground: { backgroundColor: string; }; appBackground: { backgroundColor: string; }; }>
+```
+
+## src/entities/meeting/model/catalog.ts
+
+### restaurantView
+
+Преобразует ответ сервера в карточку со встроенным фото.
+
+```typescript
+restaurantView(r: RemoteRestaurant): Restaurant
+```
+
+### replaceCatalog
+
+Обновляет клиентский каталог заведений.
+
+```typescript
+replaceCatalog(items: Restaurant[]): void
 ```
 
 ## src/entities/meeting/lib/meetingLogic.ts
@@ -80,10 +98,10 @@ meetingDate(date: string): string
 
 ### getLeader
 
-Возвращает ресторан с наибольшим числом голосов; при равенстве сохраняет порядок демонстрационного каталога.
+Возвращает ресторан с наибольшим числом голосов; при равенстве сохраняет порядок предложенных мест; окончательный выбор проверяет сервер.
 
 ```typescript
-getLeader(meeting: Meeting): Restaurant
+getLeader(meeting: Meeting): Restaurant | undefined
 ```
 
 ### voteCount
@@ -94,14 +112,6 @@ getLeader(meeting: Meeting): Restaurant
 voteCount(meeting: Meeting, id: string): number
 ```
 
-### filterRestaurants
-
-Отбирает рестораны одновременно по бюджету, кухне, расстоянию и поисковой строке.
-
-```typescript
-filterRestaurants(filters: MapFilters, query?: string): Restaurant[]
-```
-
 ### reactionCount
 
 Суммирует реакции других участников и реакцию текущего пользователя.
@@ -110,64 +120,62 @@ filterRestaurants(filters: MapFilters, query?: string): Restaurant[]
 reactionCount(message: Message): number
 ```
 
-### toggleReaction
-
-Создаёт копию сообщения с переключённой реакцией пользователя, не меняя исходное сообщение.
-
-```typescript
-toggleReaction(message: Message): Message
-```
-
 ### meetingPlace
 
 Возвращает выбранный ресторан или текущего лидера, если ресторан не задан или не найден.
 
 ```typescript
-meetingPlace(meeting: Meeting): Restaurant
+meetingPlace(meeting: Meeting): Restaurant | undefined
 ```
 
-### confirmBooking
+## src/shared/api/client.ts
 
-Возвращает копию встречи с подтверждённой локальной бронью и статусом completed; завершённую встречу не меняет.
+### restoreSession
+
+Восстанавливает токены сессии из хранилища.
 
 ```typescript
-confirmBooking(meeting: Meeting, restaurantId: string, now?: string): Meeting
+restoreSession(): Promise<boolean>
 ```
 
-### cancelBooking
+### setTokens
 
-Очищает даты брони и завершения и возвращает selected или voting; другие статусы не меняет.
+Сохраняет или удаляет токены сессии.
 
 ```typescript
-cancelBooking(meeting: Meeting): Meeting
+setTokens(value: Tokens | null): Promise<void>
 ```
 
-## src/app/lib/storage/migrations.ts
+### accessToken
 
-### restoreStore
-
-Разбирает JSON, проверяет основные контейнеры и добавляет отсутствующие поля из initialStore; полной проверки вложенных объектов не выполняет.
+Возвращает текущий access-токен.
 
 ```typescript
-restoreStore(raw: string): Store
+accessToken(): string | undefined
 ```
 
-## src/app/lib/storage/localStore.ts
+### refreshToken
 
-### loadStore
-
-Читает JSON из AsyncStorage и передаёт его в restoreStore для восстановления состояния.
+Возвращает текущий refresh-токен.
 
 ```typescript
-loadStore(): Promise<Store | null>
+refreshToken(): string | undefined
 ```
 
-### saveStore
+### api
 
-Сериализует состояние и ставит запись в очередь; неудачная предыдущая запись не блокирует следующую.
+Вызывает API и обновляет истёкшую сессию при необходимости.
 
 ```typescript
-saveStore(store: Store): Promise<void>
+api<T>(path: string, method?: string, body?: unknown, retry?: boolean): Promise<T>
+```
+
+### upload
+
+Загружает файл на сервер.
+
+```typescript
+upload(uri: string, name: string, mime: string, meetingId?: string): Promise<{ id: string; url: string; name: string; mime: string; }>
 ```
 
 ## src/shared/api/device.ts
@@ -177,7 +185,7 @@ saveStore(store: Store): Promise<void>
 Открывает системный выбор файла и возвращает имя, URI и признак изображения либо null при отмене.
 
 ```typescript
-chooseAttachment(): Promise<{ name: string; uri: string; image: boolean; } | null>
+chooseAttachment(): Promise<{ name: string; uri: string; image: boolean; mimeType: string; } | null>
 ```
 
 ### chooseAvatar
@@ -185,15 +193,7 @@ chooseAttachment(): Promise<{ name: string; uri: string; image: boolean; } | nul
 Открывает выбор изображения профиля и возвращает URI либо null при отмене.
 
 ```typescript
-chooseAvatar(): Promise<string | null>
-```
-
-### shareText
-
-Открывает системное меню отправки переданного текста.
-
-```typescript
-shareText(message: string): Promise<ShareAction>
+chooseAvatar(): Promise<{ uri: string; name: string; mimeType: string; } | null>
 ```
 
 ### openExternalLink
@@ -201,257 +201,7 @@ shareText(message: string): Promise<ShareAction>
 Передаёт URI операционной системе для открытия браузера или другого приложения.
 
 ```typescript
-openExternalLink(url: string): Promise<any>
-```
-
-## src/features/share-invitation/lib/shareInvitation.ts
-
-### shareInvitation
-
-Формирует текст приглашения из данных встречи и передаёт его системному меню отправки.
-
-```typescript
-shareInvitation(meeting: Meeting): Promise<ShareAction>
-```
-
-## src/shared/lib/time.ts
-
-### timeNow
-
-Возвращает текущее местное время устройства в формате часов и минут.
-
-```typescript
-timeNow(): string
-```
-
-## src/shared/lib/participants.ts
-
-### validateParticipant
-
-Проверяет имя участника и исключает повторы без учёта регистра.
-
-```typescript
-validateParticipant(name: string, participants?: string[]): "" | "Введите имя участника" | "Имя должно содержать от 2 до 30 символов" | "Допустимы буквы, пробел и дефис; пробелы по краям запрещены" | "Этот участник уже добавлен"
-```
-
-## src/app/model/usePersistentStore.ts
-
-### usePersistentStore
-
-Загружает сохранённое состояние и автоматически записывает его изменения в AsyncStorage.
-
-```typescript
-usePersistentStore(): { store: Store; setStore: React.Dispatch<React.SetStateAction<Store>>; loaded: boolean; storageError: string; }
-```
-
-## src/app/model/useAppController.ts
-
-### useAppController
-
-Объединяет общее состояние, навигацию и обработчики действий приложения.
-
-```typescript
-useAppController(): { removeParticipant: (name: string) => void; sharePlaceInChat: () => void; saveMeeting: (m: Meeting) => void; toggleMessageLike: (id: string) => void; sendMessage: (text: string) => void; enterSession: (name: string, email: string) => void; confirmCurrentBooking: () => void; selectLeader: () => void; saveProfile: () => void; inviteParticipant: () => void; signOut: () => void; fontsLoaded: boolean; fontError: Error | null; store: Store; loaded: boolean; screen: Screen; setScreen: React.Dispatch<React.SetStateAction<Screen>>; selected: string; dialog: DialogName; setDialog: React.Dispatch<React.SetStateAction<DialogName>>; booking: Restaurant; meetingSection: "active" | "completed"; setMeetingSection: React.Dispatch<React.SetStateAction<"active" | "completed">>; search: string; setSearch: React.Dispatch<React.SetStateAction<string>>; inviteName: string; setInviteName: React.Dispatch<React.SetStateAction<string>>; editName: string; setEditName: React.Dispatch<React.SetStateAction<string>>; editEmail: string; setEditEmail: React.Dispatch<React.SetStateAction<string>>; toast: ToastNotification | null; showToast: (type: ToastType, message: string) => void; dismissToast: () => void; cancelCurrentBooking: () => void; filterBudget: string; setFilterBudget: React.Dispatch<React.SetStateAction<string>>; filterCuisine: string; setFilterCuisine: React.Dispatch<React.SetStateAction<string>>; filterDistance: string; setFilterDistance: React.Dispatch<React.SetStateAction<string>>; meeting: Meeting; update: (patch: Partial<Store>) => void; updateMeeting: (fn: (m: Meeting) => Meeting) => void; addMessage: (message: Message) => void; leader: () => Restaurant; matchingMeetings: Meeting[]; openMeeting: (id: string) => void; book: (r: Restaurant) => void; share: () => void; vote: (id: string) => void; pickAttachment: () => Promise<void>; pickAvatar: () => Promise<void>; goBack: () => void; isTabs: boolean; title: string; }
-```
-
-### showToast
-
-Создаёт новое уведомление с уникальным номером показа.
-
-```typescript
-showToast(type: ToastType, message: string): void
-```
-
-### dismissToast
-
-Скрывает текущее уведомление.
-
-```typescript
-dismissToast(): void
-```
-
-### cancelCurrentBooking
-
-Отменяет локальную бронь и открывает активные встречи.
-
-```typescript
-cancelCurrentBooking(): void
-```
-
-### update
-
-Обновляет только переданные поля общего состояния, сохраняя остальные.
-
-```typescript
-update(patch: Partial<Store>): void
-```
-
-### updateMeeting
-
-Применяет преобразование только к выбранной встрече.
-
-```typescript
-updateMeeting(fn: (m: Meeting) => Meeting): void
-```
-
-### addMessage
-
-Добавляет сообщение в чат выбранной встречи без изменения исходных массивов.
-
-```typescript
-addMessage(message: Message): void
-```
-
-### leader
-
-Определяет ресторан-лидер выбранной встречи.
-
-```typescript
-leader(): Restaurant
-```
-
-### openMeeting
-
-Запоминает идентификатор встречи и открывает её подробности.
-
-```typescript
-openMeeting(id: string): void
-```
-
-### book
-
-Выбирает ресторан для диалога бронирования; саму бронь не подтверждает.
-
-```typescript
-book(r: Restaurant): void
-```
-
-### share
-
-Отправляет приглашение на выбранную встречу и показывает ошибку при неудаче.
-
-```typescript
-share(): void
-```
-
-### vote
-
-Записывает голос демонстрационного пользователя Ани, если статус встречи допускает голосование.
-
-```typescript
-vote(id: string): void
-```
-
-### pickAttachment
-
-Выбирает файл, создаёт сообщение с вложением и закрывает диалог; ошибки показывает уведомлением.
-
-```typescript
-pickAttachment(): Promise<void>
-```
-
-### pickAvatar
-
-Выбирает фотографию и обновляет профиль только при успешном выборе.
-
-```typescript
-pickAvatar(): Promise<void>
-```
-
-### goBack
-
-Открывает подробности после редактирования или список встреч с остальных внутренних экранов.
-
-```typescript
-goBack(): void
-```
-
-### saveMeeting
-
-Сохраняет изменения встречи либо добавляет новую встречу вместе с начальным системным сообщением.
-
-```typescript
-saveMeeting(m: Meeting): void
-```
-
-### toggleMessageLike
-
-Переключает реакцию только у сообщения с переданным id в текущем чате.
-
-```typescript
-toggleMessageLike(id: string): void
-```
-
-### sendMessage
-
-Создаёт и добавляет текстовое сообщение от текущего локального пользователя.
-
-```typescript
-sendMessage(text: string): void
-```
-
-### enterSession
-
-Запоминает имя, email и флаг локального входа; серверную аутентификацию не выполняет.
-
-```typescript
-enterSession(name: string, email: string): void
-```
-
-### confirmCurrentBooking
-
-Подтверждает локальную бронь и открывает завершённые встречи.
-
-```typescript
-confirmCurrentBooking(): void
-```
-
-### selectLeader
-
-Закрепляет ресторан-лидер за встречей и меняет её статус на selected.
-
-```typescript
-selectLeader(): void
-```
-
-### saveProfile
-
-Проверяет имя и формат email, обновляет профиль и закрывает диалог.
-
-```typescript
-saveProfile(): void
-```
-
-### inviteParticipant
-
-Проверяет формат и уникальность имени, добавляет участника и закрывает приглашение.
-
-```typescript
-inviteParticipant(): void
-```
-
-### signOut
-
-Сбрасывает локальный флаг входа и открывает форму авторизации.
-
-```typescript
-signOut(): void
-```
-
-### removeParticipant
-
-Удаляет участника и его голос из выбранной встречи.
-
-```typescript
-removeParticipant(name: string): void
-```
-
-### sharePlaceInChat
-
-Добавляет в текущий чат предложение ресторана-лидера с ценой.
-
-```typescript
-sharePlaceInChat(): void
+openExternalLink(url: string): Promise<void>
 ```
 
 ## src/shared/ui/controls/Toggle.styles.ts
@@ -461,7 +211,7 @@ sharePlaceInChat(): void
 Создаёт стили Toggle; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { switchTrack: { width: number; height: number; borderRadius: number; padding: number; justifyContent: "center"; }; switchThumb: { width: number; height: number; borderRadius: number; backgroundColor: string; }; }
+createStyles(colors: ThemeColors): Readonly<{ switchTrack: { width: number; height: number; borderRadius: number; padding: number; justifyContent: "center"; }; switchThumb: { width: number; height: number; borderRadius: number; backgroundColor: string; }; }>
 ```
 
 ### getSwitchTrack
@@ -507,7 +257,7 @@ Icon({ name, size, color, }: { name: IconName; size?: number; color?: string; })
 Создаёт стили Button; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(): { button: { flexDirection: "row"; gap: number; minHeight: number; borderRadius: number; alignItems: "center"; justifyContent: "center"; paddingHorizontal: number; }; buttonLabel: { fontSize: number; fontWeight: "600"; }; }
+createStyles(): Readonly<{ button: { flexDirection: "row"; gap: number; minHeight: number; borderRadius: number; alignItems: "center"; justifyContent: "center"; paddingHorizontal: number; }; buttonLabel: { fontSize: number; fontWeight: "600"; }; }>
 ```
 
 ### getButtonState
@@ -533,7 +283,7 @@ getButtonLabelColor(colors: ThemeColors, variant: ButtonVariant): TextStyle
 Показывает кнопку выбранного варианта оформления; disabled блокирует нажатия.
 
 ```typescript
-Button({ title, onPress, variant, style, disabled, icon, textStyle, }: { title: string; onPress: () => void; variant?: ButtonVariant; style?: StyleProp<ViewStyle>; disabled?: boolean; icon?: IconName; textStyle?: StyleProp<TextStyle>; }): React.JSX.Element
+Button({ title, onPress, variant, style, disabled, icon, textStyle, stopPropagation, }: { title: string; onPress: () => void; variant?: ButtonVariant; style?: StyleProp<ViewStyle>; disabled?: boolean; icon?: IconName; textStyle?: StyleProp<TextStyle>; stopPropagation?: boolean; }): React.JSX.Element
 ```
 
 ## src/shared/ui/controls/IconButton.styles.ts
@@ -543,7 +293,7 @@ Button({ title, onPress, variant, style, disabled, icon, textStyle, }: { title: 
 Создаёт стили IconButton; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(): { iconButton: { width: number; height: number; alignItems: "center"; justifyContent: "center"; }; }
+createStyles(): Readonly<{ iconButton: { width: number; height: number; alignItems: "center"; justifyContent: "center"; }; }>
 ```
 
 ## src/shared/ui/controls/IconButton.tsx
@@ -563,7 +313,7 @@ IconButton({ name, onPress, color, }: { name: IconName; onPress: () => void; col
 Создаёт стили Field; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { fieldContainer: { gap: number; }; input: { height: number; borderWidth: number; borderColor: string; borderRadius: number; paddingHorizontal: number; fontSize: number; color: string; backgroundColor: string; }; }
+createStyles(colors: ThemeColors): Readonly<{ fieldContainer: { gap: number; }; input: { height: number; borderWidth: number; borderColor: string; borderRadius: number; paddingHorizontal: number; fontSize: number; color: string; backgroundColor: string; }; }>
 ```
 
 ## src/shared/ui/shared.styles.ts
@@ -573,7 +323,7 @@ createStyles(colors: ThemeColors): { fieldContainer: { gap: number; }; input: { 
 Создаёт стили общих элементов; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createUiStyles(colors: ThemeColors): { label: { fontSize: number; color: string; }; heading: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; muted: { fontSize: number; color: string; lineHeight: number; }; section: { paddingVertical: number; borderBottomWidth: number; borderColor: string; gap: number; }; card: { borderWidth: number; borderColor: string; borderRadius: number; backgroundColor: string; padding: number; gap: number; }; }
+createUiStyles(colors: ThemeColors): Readonly<{ label: { fontSize: number; color: string; }; heading: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; muted: { fontSize: number; color: string; lineHeight: number; }; section: { paddingVertical: number; borderBottomWidth: number; borderColor: string; gap: number; }; card: { borderWidth: number; borderColor: string; borderRadius: number; backgroundColor: string; padding: number; gap: number; }; }>
 ```
 
 ### useUiStyles
@@ -581,7 +331,7 @@ createUiStyles(colors: ThemeColors): { label: { fontSize: number; color: string;
 Возвращает общие стили подписей, заголовков, карточек и секций с цветами текущей темы.
 
 ```typescript
-useUiStyles(): { label: { fontSize: number; color: string; }; heading: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; muted: { fontSize: number; color: string; lineHeight: number; }; section: { paddingVertical: number; borderBottomWidth: number; borderColor: string; gap: number; }; card: { borderWidth: number; borderColor: string; borderRadius: number; backgroundColor: string; padding: number; gap: number; }; }
+useUiStyles(): Readonly<{ label: { fontSize: number; color: string; }; heading: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; muted: { fontSize: number; color: string; lineHeight: number; }; section: { paddingVertical: number; borderBottomWidth: number; borderColor: string; gap: number; }; card: { borderWidth: number; borderColor: string; borderRadius: number; backgroundColor: string; padding: number; gap: number; }; }>
 ```
 
 ## src/shared/ui/controls/Field.tsx
@@ -601,7 +351,7 @@ Field({ label, ...props }: TextInputProps & { label?: string; }): React.JSX.Elem
 Создаёт стили Avatars; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { avatar: { width: number; height: number; borderRadius: number; borderWidth: number; borderColor: string; justifyContent: "center"; alignItems: "center"; }; avatarGroup: { flexDirection: "row"; alignItems: "center"; }; avatarInitial: { fontWeight: "600"; color: string; }; avatarOverflow: { marginLeft: number; color: string; fontSize: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ avatar: { width: number; height: number; borderRadius: number; borderWidth: number; borderColor: string; justifyContent: "center"; alignItems: "center"; }; avatarGroup: { flexDirection: "row"; alignItems: "center"; }; avatarInitial: { fontWeight: "600"; color: string; }; avatarOverflow: { marginLeft: number; color: string; fontSize: number; }; }>
 ```
 
 ### getAvatarStyle
@@ -637,7 +387,7 @@ Avatars({ names, limit, size, }: { names: string[]; limit?: number; size?: numbe
 Создаёт стили Chip; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { chip: { paddingHorizontal: number; paddingVertical: number; borderRadius: number; backgroundColor: string; borderWidth: number; borderColor: string; }; chipLabel: { fontSize: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ chip: { paddingHorizontal: number; paddingVertical: number; borderRadius: number; backgroundColor: string; borderWidth: number; borderColor: string; }; chipLabel: { fontSize: number; }; }>
 ```
 
 ### getSelectedChip
@@ -673,7 +423,7 @@ Chip({ label, selected, onPress, }: { label: string; selected?: boolean; onPress
 Создаёт стили Row; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(): { row: { flexDirection: "row"; alignItems: "center"; justifyContent: "space-between"; }; }
+createStyles(): Readonly<{ row: { flexDirection: "row"; alignItems: "center"; justifyContent: "space-between"; }; }>
 ```
 
 ## src/shared/ui/controls/Row.tsx
@@ -684,6 +434,337 @@ createStyles(): { row: { flexDirection: "row"; alignItems: "center"; justifyCont
 
 ```typescript
 Row({ children, style, }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; }): React.JSX.Element
+```
+
+## src/shared/ui/controls/Select.tsx
+
+### Select
+
+Выпадающий список: системный select в браузере, доступное окно выбора на телефоне.
+
+```typescript
+Select({ label, value, options, onChange, accessibilityLabel }: { label: string; value: string; options: string[]; onChange: (value: string) => void; accessibilityLabel?: string; }): React.JSX.Element
+```
+
+## src/features/calendar-export/ui/CalendarExportDialog.styles.ts
+
+### createStyles
+
+Создаёт стили CalendarExportDialog; значения зависят от переданной палитры, если она используется.
+
+```typescript
+createStyles(_colors: ThemeColors): Readonly<{ meetingList: { gap: number; }; meetingRow: { gap: number; }; meetingInfo: { flex: number; gap: number; }; exportButton: { minHeight: number; paddingVertical: number; }; exportButtonLabel: { textAlign: "center"; lineHeight: number; flexShrink: number; }; }>
+```
+
+### getMeetingSelection
+
+Выбирает цвет рамки выбранной карточки встречи.
+
+```typescript
+getMeetingSelection(colors: ThemeColors, selected: boolean): ViewStyle
+```
+
+## src/features/calendar-export/ui/CalendarExportDialog.tsx
+
+### CalendarExportDialog
+
+Экспортирует выбранную встречу в ICS для импорта в Яндекс Календарь.
+
+```typescript
+CalendarExportDialog({ controller, }: { controller: { store: Store; setDialog: (dialog: DialogName) => void; showToast: (type: ToastType, message: string) => void; meeting?: Meeting; exportMeeting: (id: string) => void; update: (patch: Partial<Store>) => void; }; }): React.JSX.Element
+```
+
+## src/features/calendar-export/lib/exportCalendar.ts
+
+### exportCalendar
+
+Экспортирует календарный файл встречи.
+
+```typescript
+exportCalendar(text: string, id: string): Promise<void>
+```
+
+## src/app/model/useAppController.ts
+
+### useAppController
+
+Координатор интерфейса: вызывает API и отображает подтверждённые сервером данные.
+Права, переходы статусов и подсчёт победителя проверяются серверными сервисами.
+
+```typescript
+useAppController(): { store: Store; loaded: boolean; screen: Screen; setScreen: React.Dispatch<React.SetStateAction<Screen>>; selected: string; dialog: DialogName; setDialog: React.Dispatch<React.SetStateAction<DialogName>>; booking: Restaurant | undefined; meetingSection: "active" | "completed"; setMeetingSection: React.Dispatch<React.SetStateAction<"active" | "completed">>; search: string; setSearch: React.Dispatch<React.SetStateAction<string>>; inviteName: string; setInviteName: React.Dispatch<React.SetStateAction<string>>; editName: string; setEditName: React.Dispatch<React.SetStateAction<string>>; editEmail: string; setEditEmail: React.Dispatch<React.SetStateAction<string>>; toast: ToastNotification | null; showToast: (type: ToastType, message: string) => void; dismissToast: () => void; filterOpenNow: boolean; setFilterOpenNow: React.Dispatch<React.SetStateAction<boolean>>; filterQuery: string; setFilterQuery: React.Dispatch<React.SetStateAction<string>>; filterBudget: string; setFilterBudget: React.Dispatch<React.SetStateAction<string>>; filterCuisine: string[]; setFilterCuisine: React.Dispatch<React.SetStateAction<string[]>>; meeting: Meeting | undefined; update: (patch: Partial<Store>) => void; leader: () => Restaurant | undefined; matchingMeetings: Meeting[]; openMeeting: (id: string) => void; openChat: (id: string, origin?: "list" | "meeting") => void; removeCandidate: (id: string) => void; book: (r: Restaurant | undefined) => void; share: () => Promise<void>; vote: (id: string) => void; pickAttachment: () => Promise<void>; pickAvatar: () => Promise<void>; goBack: () => void; isTabs: boolean; title: string; saveMeeting: (m: Meeting) => Promise<void>; toggleMessageLike: (id: string) => void; sendMessage: (text: string) => Promise<void>; enterSession: (name: string, email: string, password: string) => Promise<void>; confirmCurrentBooking: () => Promise<void>; cancelCurrentBooking: () => Promise<void>; selectLeader: () => Promise<void>; saveProfile: () => Promise<void>; inviteParticipant: () => Promise<void>; removeParticipant: (id: string) => void; sharePlaceInChat: () => Promise<void>; signOut: () => Promise<void>; fontsLoaded: boolean; fontError: Error | null; busy: boolean; propose: (r: Restaurant) => Promise<void>; recommend: () => Promise<void>; exportMeeting: (id: string) => Promise<void>; loadOlderMessages: () => Promise<void>; hasOlderMessages: boolean; discoveryBusy: boolean; discoveryError: string; refreshMeetings: () => Promise<void>; }
+```
+
+### dismissToast
+
+Закрывает уведомление.
+
+```typescript
+dismissToast(): void
+```
+
+### run
+
+Выполняет действие с обработкой ошибок.
+
+```typescript
+run(action: () => Promise<void>): Promise<void>
+```
+
+### refresh
+
+Загружает актуальные данные пользователя и встреч.
+
+```typescript
+refresh(): undefined
+```
+
+### accept
+
+Принимает приглашение по токену.
+
+```typescript
+accept(url: string): void
+```
+
+### acceptInvitation
+
+Обрабатывает принятие приглашения пользователем.
+
+```typescript
+acceptInvitation(): Promise<void>
+```
+
+### requireMeeting
+
+Возвращает текущую встречу или сообщает об отсутствии выбора.
+
+```typescript
+requireMeeting(): Meeting
+```
+
+### mutate
+
+Выполняет изменение на сервере и обновляет данные.
+
+```typescript
+mutate(path: string, method: string, body?: unknown): Promise<void>
+```
+
+### update
+
+Обновляет поля состояния приложения.
+
+```typescript
+update(patch: Partial<Store>): void
+```
+
+### enterSession
+
+Выполняет вход или регистрацию.
+
+```typescript
+enterSession(name: string, email: string, password: string): Promise<void>
+```
+
+### signOut
+
+Завершает текущую сессию.
+
+```typescript
+signOut(): Promise<void>
+```
+
+### openMeeting
+
+Открывает подробности встречи.
+
+```typescript
+openMeeting(id: string): void
+```
+
+### openChat
+
+Открывает переписку встречи.
+
+```typescript
+openChat(id: string, origin?: "list" | "meeting"): void
+```
+
+### book
+
+Открывает диалог бронирования заведения.
+
+```typescript
+book(r: Restaurant | undefined): void
+```
+
+### leader
+
+Возвращает лидера голосования.
+
+```typescript
+leader(): Restaurant | undefined
+```
+
+### saveMeeting
+
+Сохраняет встречу через API.
+
+```typescript
+saveMeeting(m: Meeting): Promise<void>
+```
+
+### vote
+
+Отправляет голос за заведение.
+
+```typescript
+vote(id: string): void
+```
+
+### removeCandidate
+
+Удаляет вариант заведения из голосования.
+
+```typescript
+removeCandidate(id: string): void
+```
+
+### selectLeader
+
+Подтверждает выбор победителя на сервере.
+
+```typescript
+selectLeader(): Promise<void>
+```
+
+### confirmCurrentBooking
+
+Подтверждает бронирование.
+
+```typescript
+confirmCurrentBooking(): Promise<void>
+```
+
+### cancelCurrentBooking
+
+Отменяет бронирование.
+
+```typescript
+cancelCurrentBooking(): Promise<void>
+```
+
+### inviteParticipant
+
+Добавляет участника встречи по email.
+
+```typescript
+inviteParticipant(): Promise<void>
+```
+
+### removeParticipant
+
+Удаляет участника встречи.
+
+```typescript
+removeParticipant(id: string): void
+```
+
+### share
+
+Создаёт ссылку приглашения и открывает меню отправки.
+
+```typescript
+share(): Promise<void>
+```
+
+### sendMessage
+
+Отправляет сообщение текущей встречи.
+
+```typescript
+sendMessage(text: string): Promise<void>
+```
+
+### toggleMessageLike
+
+Переключает реакцию на сообщение.
+
+```typescript
+toggleMessageLike(id: string): void
+```
+
+### pickAttachment
+
+Выбирает и загружает вложение для сообщения.
+
+```typescript
+pickAttachment(): Promise<void>
+```
+
+### pickAvatar
+
+Выбирает и загружает изображение профиля.
+
+```typescript
+pickAvatar(): Promise<void>
+```
+
+### saveProfile
+
+Сохраняет изменения профиля.
+
+```typescript
+saveProfile(): Promise<void>
+```
+
+### sharePlaceInChat
+
+Отправляет предложение заведения в чат.
+
+```typescript
+sharePlaceInChat(): Promise<void>
+```
+
+### propose
+
+Добавляет заведение в варианты встречи.
+
+```typescript
+propose(r: Restaurant): Promise<void>
+```
+
+### recommend
+
+Обновляет автоматические варианты заведений.
+
+```typescript
+recommend(): Promise<void>
+```
+
+### exportMeeting
+
+Запрашивает и экспортирует календарное событие.
+
+```typescript
+exportMeeting(id: string): Promise<void>
+```
+
+### loadOlderMessages
+
+Загружает предыдущую страницу сообщений.
+
+```typescript
+loadOlderMessages(): Promise<void>
+```
+
+### goBack
+
+Возвращает на предыдущий экран.
+
+```typescript
+goBack(): void
 ```
 
 ## src/features/attach-message/ui/AttachmentDialog.tsx
@@ -703,7 +784,7 @@ AttachmentDialog({ controller, }: { controller: { sharePlaceInChat: () => void; 
 Создаёт стили BookingDialog; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { restaurantSummary: { backgroundColor: string; padding: number; borderRadius: number; gap: number; }; restaurantImage: { width: number; height: number; borderRadius: number; }; restaurantInfo: { flex: number; gap: number; }; restaurantName: { fontSize: number; fontWeight: "600"; color: string; }; restaurantDescription: { color: string; fontSize: number; }; contactList: { borderRadius: number; borderWidth: number; borderColor: string; overflow: "hidden"; }; firstContactRow: { padding: number; }; contactRow: { padding: number; borderTopWidth: number; borderColor: string; }; contactLabel: { color: string; fontSize: number; }; contactLink: { color: string; fontSize: number; textDecorationLine: "underline"; }; }
+createStyles(colors: ThemeColors): Readonly<{ restaurantSummary: { backgroundColor: string; padding: number; borderRadius: number; gap: number; }; restaurantImage: { width: number; height: number; borderRadius: number; }; restaurantInfo: { flex: number; gap: number; }; restaurantName: { fontSize: number; fontWeight: "600"; color: string; }; restaurantDescription: { color: string; fontSize: number; }; contactList: { borderRadius: number; borderWidth: number; borderColor: string; overflow: "hidden"; }; firstContactRow: { padding: number; }; contactRow: { padding: number; borderTopWidth: number; borderColor: string; }; contactLabel: { color: string; fontSize: number; }; contactLink: { color: string; fontSize: number; textDecorationLine: "underline"; }; }>
 ```
 
 ## src/features/booking/ui/BookingDialog.tsx
@@ -716,34 +797,6 @@ createStyles(colors: ThemeColors): { restaurantSummary: { backgroundColor: strin
 BookingDialog({ controller, }: { controller: { confirmCurrentBooking: () => void; booking: Restaurant; showToast: (type: ToastType, message: string) => void; cancelCurrentBooking: () => void; meeting: Meeting; }; }): React.JSX.Element
 ```
 
-## src/features/calendar-export/ui/CalendarExportDialog.styles.ts
-
-### createStyles
-
-Создаёт стили CalendarExportDialog; значения зависят от переданной палитры, если она используется.
-
-```typescript
-createStyles(_colors: ThemeColors): { meetingList: { gap: number; }; meetingRow: { gap: number; }; meetingInfo: { flex: number; gap: number; }; exportButton: { minHeight: number; paddingVertical: number; }; exportButtonLabel: { textAlign: "center"; lineHeight: number; flexShrink: number; }; }
-```
-
-### getMeetingSelection
-
-Выбирает цвет рамки выбранной карточки встречи.
-
-```typescript
-getMeetingSelection(colors: ThemeColors, selected: boolean): ViewStyle
-```
-
-## src/features/calendar-export/ui/CalendarExportDialog.tsx
-
-### CalendarExportDialog
-
-Показывает настройки календаря; кнопка экспорта пока не выполняет действий.
-
-```typescript
-CalendarExportDialog({ controller, }: { controller: { store: Store; setDialog: (dialog: DialogName) => void; showToast: (type: ToastType, message: string) => void; meeting: Meeting; update: (patch: Partial<Store>) => void; }; }): React.JSX.Element
-```
-
 ## src/features/edit-profile/ui/EditProfileDialog.tsx
 
 ### EditProfileDialog
@@ -754,6 +807,16 @@ CalendarExportDialog({ controller, }: { controller: { store: Store; setDialog: (
 EditProfileDialog({ controller, }: { controller: { saveProfile: () => void; editName: string; setEditName: (value: string) => void; editEmail: string; setEditEmail: (value: string) => void; pickAvatar: () => Promise<void>; }; }): React.JSX.Element
 ```
 
+## src/shared/api/useCatalogFilters.ts
+
+### useCatalogFilters
+
+Загружает варианты фильтров из текущего каталога БД.
+
+```typescript
+useCatalogFilters(): { options: CatalogFilters | null; error: string; retry: () => void; }
+```
+
 ## src/features/filter-restaurants/ui/FiltersDialog.styles.ts
 
 ### createStyles
@@ -761,17 +824,17 @@ EditProfileDialog({ controller, }: { controller: { saveProfile: () => void; edit
 Создаёт стили FiltersDialog; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(): { wrap: { flexDirection: "row"; flexWrap: "wrap"; gap: number; }; }
+createStyles(): Readonly<{ wrap: { flexDirection: "row"; flexWrap: "wrap"; gap: number; }; }>
 ```
 
 ## src/features/filter-restaurants/ui/FiltersDialog.tsx
 
 ### FiltersDialog
 
-Передаёт выбор бюджета, кухни и расстояния и позволяет применить или сбросить фильтры.
+Передаёт выбор кухни и среднего чека.
 
 ```typescript
-FiltersDialog({ controller, }: { controller: { setDialog: (dialog: DialogName) => void; showToast: (type: ToastType, message: string) => void; filterBudget: string; setFilterBudget: (value: string) => void; filterCuisine: string; setFilterCuisine: (value: string) => void; filterDistance: string; setFilterDistance: (value: string) => void; }; }): React.JSX.Element
+FiltersDialog({ controller, }: { controller: { setDialog: (dialog: DialogName) => void; showToast: (type: ToastType, message: string) => void; setFilterOpenNow?: (value: boolean) => void; setFilterQuery?: (value: string) => void; filterBudget: string; setFilterBudget: (value: string) => void; filterCuisine: string[]; setFilterCuisine: (value: string[]) => void; }; }): React.JSX.Element
 ```
 
 ## src/features/manage-participants/ui/InviteDialog.tsx
@@ -791,7 +854,7 @@ InviteDialog({ controller, }: { controller: { inviteParticipant: () => void; inv
 Создаёт стили ParticipantsDialog; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { participantInfo: { gap: number; }; participantName: { color: string; fontSize: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ participantInfo: { gap: number; }; participantName: { color: string; fontSize: number; }; }>
 ```
 
 ## src/features/manage-participants/ui/ParticipantsDialog.tsx
@@ -821,14 +884,14 @@ MeetingActionsDialog({ controller, }: { controller: { selectLeader: () => void; 
 Создаёт стили Auth; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { root: { padding: number; paddingTop: number; }; logo: { fontSize: number; fontWeight: "600"; color: string; marginBottom: number; }; title: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; subtitle: { fontSize: number; lineHeight: number; color: string; marginTop: number; }; backButton: { flexDirection: "row"; gap: number; alignItems: "center"; marginBottom: number; }; backLabel: { color: string; }; logoAccent: { color: string; }; fields: { gap: number; marginTop: number; }; passwordContainer: { position: "relative"; }; passwordInput: { paddingRight: number; }; passwordHint: { color: string; fontSize: number; lineHeight: number; }; passwordToggle: { position: "absolute"; right: number; bottom: number; }; passwordToggleLabel: { color: string; fontSize: number; }; error: { color: string; marginTop: number; }; submitButton: { marginTop: number; }; switchButton: { marginTop: number; padding: number; alignItems: "center"; }; switchLabel: { color: string; fontSize: number; }; switchLink: { color: string; }; }
+createStyles(colors: ThemeColors): Readonly<{ root: { padding: number; paddingTop: number; }; logo: { fontSize: number; fontWeight: "600"; color: string; marginBottom: number; }; title: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; }; subtitle: { fontSize: number; lineHeight: number; color: string; marginTop: number; }; backButton: { flexDirection: "row"; gap: number; alignItems: "center"; marginBottom: number; }; backLabel: { color: string; }; logoAccent: { color: string; }; fields: { gap: number; marginTop: number; }; passwordContainer: { position: "relative"; }; passwordInput: { paddingRight: number; }; passwordHint: { color: string; fontSize: number; lineHeight: number; }; passwordToggle: { position: "absolute"; right: number; bottom: number; }; passwordToggleLabel: { color: string; fontSize: number; }; error: { color: string; marginTop: number; }; submitButton: { marginTop: number; }; switchButton: { marginTop: number; padding: number; alignItems: "center"; }; switchLabel: { color: string; fontSize: number; }; switchLink: { color: string; }; }>
 ```
 
 ## src/pages/auth/model/validation.ts
 
 ### validateAuth
 
-Проверяет поля регистрации или входа по правилам MedClinic, не изменяя ввод.
+Проверяет поля регистрации или входа перед отправкой на сервер, не изменяя ввод.
 
 ```typescript
 validateAuth(values: AuthValues): { name: string; email: string; password: string; confirmPassword: string; }
@@ -841,7 +904,33 @@ validateAuth(values: AuthValues): { name: string; email: string; password: strin
 Показывает форму входа или регистрации и проверяет заполнение полей перед вызовом onEnter.
 
 ```typescript
-Auth({ register, onSwitch, onBack, onEnter, }: { register: boolean; onSwitch: () => void; onBack: () => void; onEnter: (name: string, email: string) => void; }): React.JSX.Element
+Auth({ register, onSwitch, onBack, onEnter, }: { register: boolean; onSwitch: () => void; onBack: () => void; onEnter: (name: string, email: string, password: string) => void; }): React.JSX.Element
+```
+
+## src/pages/chat/model/messages.ts
+
+### messageDay
+
+Возвращает день сообщения для группировки.
+
+```typescript
+messageDay(message?: Message): string
+```
+
+### continuesGroup
+
+Проверяет продолжение группы сообщений одного автора.
+
+```typescript
+continuesGroup(previous: Message | undefined, current: Message): boolean
+```
+
+### dayLabel
+
+Форматирует подпись дня переписки.
+
+```typescript
+dayLabel(message: Message): string
 ```
 
 ## src/pages/chat/ui/Chat.styles.ts
@@ -851,7 +940,7 @@ Auth({ register, onSwitch, onBack, onEnter, }: { register: boolean; onSwitch: ()
 Создаёт стили Chat; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { root: { flex: number; }; leaderCard: { marginHorizontal: number; marginTop: number; padding: number; borderRadius: number; backgroundColor: string; }; leaderLabel: { fontSize: number; color: string; }; leaderTitle: { fontSize: number; color: string; marginTop: number; }; messagesContent: { padding: number; gap: number; }; dateBadge: { alignSelf: "center"; backgroundColor: string; padding: number; borderRadius: number; fontSize: number; color: string; }; systemMessage: { textAlign: "center"; color: string; fontSize: number; paddingVertical: number; }; confirmationCard: { backgroundColor: string; borderRadius: number; borderWidth: number; borderColor: string; padding: number; }; confirmationRow: { justifyContent: "flex-start"; gap: number; }; confirmationIcon: { backgroundColor: string; borderRadius: number; padding: number; }; confirmationTitle: { fontWeight: "600"; color: string; }; confirmationDescription: { marginTop: number; }; messageContainer: { maxWidth: "88%"; }; messageMeta: { fontSize: number; color: string; marginBottom: number; }; messageRow: { gap: number; alignItems: "flex-end"; }; messageBubble: { flexShrink: number; maxWidth: number; borderRadius: number; paddingHorizontal: number; paddingVertical: number; }; attachment: { width: number; height: number; borderRadius: number; marginBottom: number; }; messageText: { fontSize: number; lineHeight: number; color: string; }; reactionBadge: { alignSelf: "flex-start"; paddingHorizontal: number; paddingVertical: number; borderRadius: number; borderWidth: number; borderColor: string; marginTop: number; backgroundColor: string; flexDirection: "row"; alignItems: "center"; gap: number; }; reactionCount: { fontSize: number; fontWeight: "600"; color: string; }; composer: { padding: number; gap: number; borderTopWidth: number; borderColor: string; }; messageInput: { flex: number; backgroundColor: string; borderRadius: number; paddingHorizontal: number; paddingVertical: number; color: string; fontSize: number; maxHeight: number; }; sendButton: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; }; }
+createStyles(colors: ThemeColors): Readonly<{ root: { flex: number; }; loadOlder: { alignSelf: "center"; padding: number; }; leaderText: { flex: number; marginHorizontal: number; }; confirmationText: { flex: number; }; groupContinuation: { marginTop: number; }; avatarSpace: { width: number; }; messageTime: { alignSelf: "flex-end"; fontSize: number; color: string; marginTop: number; }; leaderCard: { marginHorizontal: number; marginTop: number; padding: number; borderRadius: number; backgroundColor: string; }; leaderLabel: { fontSize: number; color: string; }; leaderTitle: { fontSize: number; color: string; marginTop: number; }; messagesContent: { padding: number; gap: number; }; dateBadge: { alignSelf: "center"; backgroundColor: string; padding: number; borderRadius: number; fontSize: number; color: string; }; systemMessage: { textAlign: "center"; color: string; fontSize: number; paddingVertical: number; }; confirmationCard: { backgroundColor: string; borderRadius: number; borderWidth: number; borderColor: string; padding: number; }; confirmationRow: { justifyContent: "flex-start"; gap: number; }; confirmationIcon: { backgroundColor: string; borderRadius: number; padding: number; }; confirmationTitle: { fontWeight: "600"; color: string; }; confirmationDescription: { marginTop: number; }; messageContainer: { maxWidth: string; }; messageMeta: { fontSize: number; color: string; marginBottom: number; }; messageRow: { gap: number; alignItems: "flex-end"; }; messageBubble: { flexShrink: number; maxWidth: number; borderRadius: number; paddingHorizontal: number; paddingVertical: number; }; attachment: { width: number; height: number; borderRadius: number; marginBottom: number; }; messageText: { fontSize: number; lineHeight: number; color: string; }; reactionBadge: { alignSelf: "flex-start"; paddingHorizontal: number; paddingVertical: number; borderRadius: number; borderWidth: number; borderColor: string; marginTop: number; backgroundColor: string; flexDirection: "row"; alignItems: "center"; gap: number; }; reactionCount: { fontSize: number; fontWeight: "600"; color: string; }; composer: { padding: number; gap: number; borderTopWidth: number; borderColor: string; }; messageInput: { flex: number; backgroundColor: string; borderRadius: number; paddingHorizontal: number; paddingVertical: number; color: string; fontSize: number; maxHeight: number; }; sendButton: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; }; }>
 ```
 
 ### getMessageAlignment
@@ -893,7 +982,7 @@ getReactionInset(mine: boolean | undefined): ViewStyle
 Показывает сообщения выбранной встречи, реакции и поле отправки текста.
 
 ```typescript
-Chat({ meeting, messages, leader, onLeader, onSend, onLike, onAttach, }: { meeting: Meeting; messages: Message[]; leader: string; onLeader: () => void; onSend: (text: string) => void; onLike: (id: string) => void; onAttach: () => void; }): React.JSX.Element
+Chat({ meeting, messages, leader, onLeader, onSend, onLike, onAttach, onLoadOlder, hasOlderMessages, }: { meeting: Meeting; messages: Message[]; leader: string; onLeader: () => void; onSend: (text: string) => void; onLike: (id: string) => void; onAttach: () => void; onLoadOlder?: () => void; hasOlderMessages?: boolean; }): React.JSX.Element
 ```
 
 ### send
@@ -904,32 +993,110 @@ Chat({ meeting, messages, leader, onLeader, onSend, onLike, onAttach, }: { meeti
 send(): void
 ```
 
+## src/pages/chat/ui/ChatsScreen.tsx
+
+### messageTime
+
+Форматирует время сообщения.
+
+```typescript
+messageTime(value?: string): string
+```
+
+### ChatsScreen
+
+Показывает список переписок встреч.
+
+```typescript
+ChatsScreen({ meetings, userId, onOpen }: { meetings: Meeting[]; userId?: string; onOpen: (id: string) => void; }): React.JSX.Element
+```
+
+### createStyles
+
+Создаёт стили для текущей темы.
+
+```typescript
+createStyles(colors: ThemeColors): Readonly<{ root: { flex: number; }; heading: { fontSize: number; fontWeight: "600"; color: string; padding: number; paddingBottom: number; }; search: { marginHorizontal: number; marginBottom: number; paddingHorizontal: number; height: number; gap: number; flexDirection: "row"; alignItems: "center"; backgroundColor: string; borderRadius: number; }; input: { flex: number; fontSize: number; color: string; height: string; paddingVertical: number; }; list: { paddingBottom: number; }; row: { flexDirection: "row"; alignItems: "center"; gap: number; paddingVertical: number; paddingHorizontal: number; }; avatar: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; }; summary: { flex: number; minWidth: number; borderBottomWidth: number; borderColor: string; paddingBottom: number; marginBottom: number; }; titleRow: { flexDirection: "row"; alignItems: "center"; gap: number; }; title: { flex: number; color: string; fontWeight: "600"; fontSize: number; }; time: { fontSize: number; color: string; }; preview: { fontSize: number; color: string; marginTop: number; lineHeight: number; }; author: { color: string; }; empty: { alignItems: "center"; padding: number; gap: number; marginTop: number; }; emptyTitle: { fontSize: number; fontWeight: "600"; color: string; }; emptyText: { color: string; textAlign: "center"; lineHeight: number; }; }>
+```
+
+## src/shared/ui/PlacePhoto.tsx
+
+### PlacePhoto
+
+Показывает встроенное фото карточки, индикатор загрузки или заглушку при ошибке.
+
+```typescript
+PlacePhoto({ id, name, image, style }: { id: string; name: string; image?: ImageSourcePropType; style: StyleProp<ViewStyle>; }): React.JSX.Element
+```
+
+## src/shared/ui/RestaurantMap.tsx
+
+### RestaurantMap
+
+Встраивает карту и связывает её события с приложением.
+
+```typescript
+RestaurantMap({ items, onEvent, selectedId, center, mode, }: { items: { id: string; name: string; latitude?: number; longitude?: number; }[]; onEvent: (event: MapEvent) => void; selectedId?: string; mode?: "catalog" | "meeting"; center?: { latitude: number; longitude: number; }; }): React.JSX.Element
+```
+
+### send
+
+Передаёт состояние во встроенную карту.
+
+```typescript
+send(): void
+```
+
+### receive
+
+Обрабатывает сообщение встроенной карты.
+
+```typescript
+receive(data: MapEvent): void
+```
+
+### listener
+
+Обрабатывает событие обмена с картой.
+
+```typescript
+listener(e: MessageEvent): void
+```
+
 ## src/pages/map/ui/MapScreen.styles.ts
 
 ### createStyles
 
-Создаёт стили MapScreen; значения зависят от переданной палитры, если она используется.
+Создаёт стили для текущей темы.
 
 ```typescript
-createStyles(colors: ThemeColors): { top: { position: "absolute"; top: number; left: number; right: number; gap: number; }; search: { flexDirection: "row"; alignItems: "center"; gap: number; backgroundColor: string; borderRadius: number; paddingHorizontal: number; height: number; }; filter: { paddingVertical: number; paddingHorizontal: number; backgroundColor: string; borderRadius: number; }; district: { position: "absolute"; fontSize: number; color: string; }; pin: { position: "absolute"; width: number; height: number; borderRadius: number; borderBottomRightRadius: number; transform: { rotate: string; }[]; alignItems: "center"; justifyContent: "center"; boxShadow: string; }; bottom: { position: "absolute"; bottom: number; left: number; right: number; backgroundColor: string; borderRadius: number; padding: number; boxShadow: string; }; root: { flex: number; overflow: "hidden"; backgroundColor: string; }; searchInput: { flex: number; fontSize: number; color: string; }; filtersRow: { gap: number; justifyContent: "flex-start"; }; filterLabel: { color: string; fontSize: number; }; searchResults: { backgroundColor: string; borderRadius: number; padding: number; gap: number; }; searchResultLabel: { color: string; padding: number; }; emptySearchLabel: { color: string; padding: number; }; patrikiLabel: { left: "7.46%"; top: "33.96%"; }; tverskoyLabel: { left: "67.85%"; top: "23.1%"; }; arbatLabel: { left: "19.9%"; top: "53%"; }; pinLabel: { color: string; fontSize: number; fontWeight: "600"; transform: { rotate: string; }[]; }; restaurantRow: { gap: number; }; restaurantImage: { width: number; height: number; borderRadius: number; }; restaurantInfo: { flex: number; gap: number; }; restaurantName: { fontSize: number; fontWeight: "600"; color: string; }; restaurantDescription: { fontSize: number; color: string; }; rating: { color: string; }; actionsRow: { gap: number; marginTop: number; }; routeButton: { flex: number; minHeight: number; backgroundColor: string; borderWidth: number; }; bookingButton: { flex: number; minHeight: number; }; emptyState: { color: string; textAlign: "center"; padding: number; }; }
-```
-
-### getMapPinStyle
-
-Преобразует координаты в проценты и выбирает цвет метки.
-
-```typescript
-getMapPinStyle(colors: ThemeColors, x: number, y: number, selected: boolean): ViewStyle
+createStyles(colors: ThemeColors): Readonly<{ root: { flex: number; overflow: "hidden"; backgroundColor: string; }; top: { position: "absolute"; top: number; left: number; right: number; gap: number; }; search: { height: number; flexDirection: "row"; alignItems: "center"; gap: number; backgroundColor: string; borderRadius: number; paddingHorizontal: number; boxShadow: string; }; searchInput: { flex: number; minWidth: number; fontSize: number; color: string; paddingVertical: number; }; filterContent: { gap: number; paddingRight: number; }; filter: { paddingVertical: number; paddingHorizontal: number; backgroundColor: string; borderRadius: number; borderWidth: number; borderColor: string; }; selectedFilter: { backgroundColor: string; borderColor: string; }; filterLabel: { color: string; fontSize: number; }; bottom: { position: "absolute"; bottom: number; left: number; right: number; backgroundColor: string; borderRadius: number; padding: number; boxShadow: string; }; restaurantRow: { flexDirection: "row"; alignItems: "center"; gap: number; minHeight: number; }; placeIcon: { width: number; height: number; borderRadius: number; flexShrink: number; backgroundColor: string; }; restaurantInfo: { flex: number; minWidth: number; gap: number; }; restaurantName: { fontSize: number; fontWeight: "600"; color: string; }; restaurantDescription: { fontSize: number; color: string; lineHeight: number; }; actionsRow: { gap: number; marginTop: number; }; routeButton: { flex: number; minHeight: number; borderRadius: number; paddingHorizontal: number; backgroundColor: string; borderWidth: number; }; bookingButton: { flex: number; minHeight: number; borderRadius: number; paddingHorizontal: number; }; actionLabel: { fontSize: number; fontWeight: "500"; }; searchResults: { backgroundColor: string; borderRadius: number; padding: number; gap: number; boxShadow: string; }; result: { padding: number; gap: number; }; searchResultLabel: { color: string; fontSize: number; }; resultMeta: { fontSize: number; color: string; }; notice: { backgroundColor: string; borderRadius: number; padding: number; gap: number; }; noticeText: { fontSize: number; color: string; }; retry: { fontSize: number; color: string; textAlign: "center"; paddingVertical: number; }; emptyState: { color: string; textAlign: "center"; padding: number; fontSize: number; lineHeight: number; }; detailsBackdrop: { flex: number; justifyContent: "flex-end"; backgroundColor: string; padding: number; }; detailsSheet: { maxHeight: string; backgroundColor: string; borderRadius: number; padding: number; }; detailsTitle: { fontSize: number; fontWeight: "600"; color: string; }; detailsContent: { gap: number; paddingTop: number; paddingBottom: number; }; detailsText: { fontSize: number; lineHeight: number; color: string; }; detailLink: { fontSize: number; color: string; paddingVertical: number; }; }>
 ```
 
 ## src/pages/map/ui/MapScreen.tsx
 
 ### MapScreen
 
-Показывает рестораны на SVG-карте, поиск, фильтры и действия для выбранного места.
+Показывает карту, фильтры и карточку заведения.
 
 ```typescript
-MapScreen({ onBook, onFilters, filters, }: { onBook: (r: Restaurant) => void; onFilters: () => void; filters: MapFilters; }): React.JSX.Element
+MapScreen({ mode, meeting, filters, onFilters, onFilterChange, onBook, onPropose, onChanged, initialRestaurant, }: { mode?: "catalog" | "meeting"; meeting?: Meeting; filters: MapFilters; onFilters: () => void; onFilterChange?: (patch: Partial<MapFilters>) => void; onBook: (r: Restaurant) => void; onPropose?: (r: Restaurant) => void; onChanged?: () => Promise<void>; initialRestaurant?: Restaurant; }): React.JSX.Element
+```
+
+### setQuery
+
+Сохраняет поисковую строку карты между переходами по вкладкам.
+
+```typescript
+setQuery(value: string): void
+```
+
+### setOpen
+
+Сохраняет фильтр открытых заведений между переходами по вкладкам.
+
+```typescript
+setOpen(value: boolean): void
 ```
 
 ## src/pages/meeting-detail/ui/MeetingDetail.styles.ts
@@ -939,15 +1106,7 @@ MapScreen({ onBook, onFilters, filters, }: { onBook: (r: Restaurant) => void; on
 Создаёт стили MeetingDetail; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { restaurant: { backgroundColor: string; borderWidth: number; borderColor: string; borderRadius: number; overflow: "hidden"; boxShadow: string; }; count: { fontSize: number; color: string; backgroundColor: string; paddingVertical: number; paddingHorizontal: number; borderRadius: number; }; restaurantImage: { width: "100%"; height: number; }; restaurantTag: { position: "absolute"; top: number; left: number; backgroundColor: string; borderRadius: number; paddingVertical: number; paddingHorizontal: number; }; restaurantTagLabel: { fontSize: number; }; restaurantInfo: { padding: number; gap: number; }; restaurantName: { fontSize: number; fontWeight: "600"; color: string; }; rating: { color: string; fontSize: number; }; priceRow: { marginTop: number; }; price: { fontSize: number; fontWeight: "600"; color: string; }; priceHint: { fontSize: number; color: string; marginTop: number; }; voteButtonLabel: { fontSize: number; fontWeight: "500"; }; voteButton: { minHeight: number; borderRadius: number; paddingHorizontal: number; }; contentContainer: { paddingBottom: number; }; meetingHeader: { padding: number; borderBottomWidth: number; borderColor: string; }; meetingStatus: { color: string; fontSize: number; textTransform: "uppercase"; marginBottom: number; }; meetingTitle: { fontSize: number; fontWeight: "600"; color: string; marginBottom: number; }; dateRow: { justifyContent: "flex-start"; gap: number; }; content: { padding: number; gap: number; }; participantsHeader: { marginTop: number; }; manageParticipantsLink: { color: string; fontSize: number; }; participantsCount: { fontSize: number; fontWeight: "600"; color: string; }; preferencesCard: { padding: number; }; preferencesLabel: { color: string; fontSize: number; }; editPreferencesButtonLabel: { fontSize: number; fontWeight: "500"; color: string; }; editPreferencesButton: { minHeight: number; paddingHorizontal: number; backgroundColor: string; borderRadius: number; }; divider: { height: number; backgroundColor: string; marginHorizontal: number; }; placesHint: { color: string; fontSize: number; marginTop: number; }; votingSection: { marginVertical: number; gap: number; }; progressTrack: { height: number; borderRadius: number; backgroundColor: string; overflow: "hidden"; }; progressBar: { height: number; backgroundColor: string; }; votingRow: { gap: number; }; votingName: { color: string; fontSize: number; }; votingCount: { color: string; fontSize: number; fontWeight: "600"; }; footer: { padding: number; borderTopWidth: number; borderColor: string; gap: number; }; }
-```
-
-### getRestaurantTagColor
-
-Выбирает цвет метки ресторана по его идентификатору.
-
-```typescript
-getRestaurantTagColor(colors: ThemeColors, id: string): TextStyle
+createStyles(colors: ThemeColors): Readonly<{ removeRestaurant: { position: "absolute"; right: number; top: number; width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; borderWidth: number; borderColor: string; }; restaurant: { backgroundColor: string; borderWidth: number; borderColor: string; borderRadius: number; overflow: "hidden"; boxShadow: string; }; count: { fontSize: number; color: string; backgroundColor: string; paddingVertical: number; paddingHorizontal: number; borderRadius: number; }; restaurantImage: { width: string; height: number; }; restaurantInfo: { padding: number; gap: number; }; restaurantName: { fontSize: number; fontWeight: "600"; color: string; }; rating: { color: string; fontSize: number; }; priceRow: { marginTop: number; }; price: { fontSize: number; fontWeight: "600"; color: string; }; priceHint: { fontSize: number; color: string; marginTop: number; }; voteButtonLabel: { fontSize: number; fontWeight: "500"; }; voteButton: { minHeight: number; borderRadius: number; paddingHorizontal: number; }; contentContainer: { paddingBottom: number; }; meetingHeader: { padding: number; borderBottomWidth: number; borderColor: string; }; meetingStatus: { color: string; fontSize: number; textTransform: "uppercase"; marginBottom: number; }; meetingTitle: { fontSize: number; fontWeight: "600"; color: string; marginBottom: number; }; dateRow: { justifyContent: "flex-start"; gap: number; }; content: { padding: number; gap: number; }; participantsHeader: { marginTop: number; }; manageParticipantsLink: { color: string; fontSize: number; }; participantsCount: { fontSize: number; fontWeight: "600"; color: string; }; preferencesCard: { padding: number; }; preferencesLabel: { color: string; fontSize: number; }; editPreferencesButtonLabel: { fontSize: number; fontWeight: "500"; color: string; }; editPreferencesButton: { minHeight: number; paddingHorizontal: number; backgroundColor: string; borderRadius: number; }; divider: { height: number; backgroundColor: string; marginHorizontal: number; }; placesHint: { color: string; fontSize: number; marginTop: number; }; votingSection: { marginVertical: number; gap: number; }; progressTrack: { height: number; borderRadius: number; backgroundColor: string; overflow: "hidden"; }; progressBar: { height: number; backgroundColor: string; }; votingRow: { gap: number; }; votingName: { color: string; fontSize: number; }; votingCount: { color: string; fontSize: number; fontWeight: "600"; }; footer: { padding: number; borderTopWidth: number; borderColor: string; gap: number; }; }>
 ```
 
 ### getVotingProgress
@@ -965,7 +1124,7 @@ getVotingProgress(votes: number, participants: number): ViewStyle
 Показывает сведения об одном ресторане и кнопку передачи голоса родителю.
 
 ```typescript
-RestaurantCard({ restaurant: r, onVote, }: { restaurant: Restaurant; onVote: () => void; voted: boolean; }): React.JSX.Element
+RestaurantCard({ restaurant: r, onVote, voted, disabled, onOpen, onRemove, }: { restaurant: Restaurant; onVote: () => void; voted: boolean; disabled?: boolean; onOpen?: () => void; onRemove?: () => void; }): React.JSX.Element
 ```
 
 ### MeetingDetail
@@ -973,7 +1132,17 @@ RestaurantCard({ restaurant: r, onVote, }: { restaurant: Restaurant; onVote: () 
 Показывает участников, варианты ресторанов и результаты голосования встречи.
 
 ```typescript
-MeetingDetail({ meeting: m, onVote, onEdit, onManage, onChat, onBook, }: { meeting: Meeting; onVote: (id: string) => void; onEdit: () => void; onManage: () => void; onChat: () => void; onBook: () => void; }): React.JSX.Element
+MeetingDetail({ meeting: m, onVote, onEdit, onManage, onChat, onBook, discoveryBusy, discoveryError, onMap, currentUserId, onRemoveCandidate, }: { meeting: Meeting; onVote: (id: string) => void; onEdit: () => void; onManage: () => void; onChat: () => void; onBook: () => void; onRecommend?: () => void; discoveryBusy?: boolean; discoveryError?: string; onMap?: (restaurant?: Restaurant) => void; currentUserId?: string; onRemoveCandidate?: (id: string) => void; }): React.JSX.Element
+```
+
+## src/shared/lib/participants.ts
+
+### validateParticipant
+
+Проверяет имя участника и исключает повторы без учёта регистра.
+
+```typescript
+validateParticipant(name: string, participants?: string[]): "" | "Введите имя участника" | "Имя должно содержать от 2 до 30 символов" | "Допустимы буквы, пробел и дефис; пробелы по краям запрещены" | "Этот участник уже добавлен"
 ```
 
 ## src/pages/meeting-form/model/validation.ts
@@ -983,7 +1152,7 @@ MeetingDetail({ meeting: m, onVote, onEdit, onManage, onChat, onBook, }: { meeti
 Проверяет поля перед сохранением встречи, разрешая прежнее время редактируемой встречи.
 
 ```typescript
-validateMeetingForm(values: FormValues, original?: Meeting, now?: Date): "" | "Введите имя участника" | "Имя должно содержать от 2 до 30 символов" | "Допустимы буквы, пробел и дефис; пробелы по краям запрещены" | "Этот участник уже добавлен" | "Введите название встречи" | "Название должно содержать от 2 до 100 символов" | "Название должно содержать букву или цифру, без переносов строк и управляющих символов" | "Выберите корректные дату и время" | "Дата и время встречи должны быть позже текущего момента" | "Бюджет должен быть от 500 до 5000 ₽ с шагом 100 ₽" | "Выберите кухни из списка без повторов" | "Выберите район из списка" | "Выберите формат встречи из списка"
+validateMeetingForm(values: FormValues, original?: Meeting, now?: Date, allowedCuisines?: readonly string[], allowedFormats?: readonly string[]): "" | "Введите имя участника" | "Имя должно содержать от 2 до 30 символов" | "Допустимы буквы, пробел и дефис; пробелы по краям запрещены" | "Этот участник уже добавлен" | "Введите название встречи" | "Название должно содержать от 2 до 100 символов" | "Название должно содержать букву или цифру, без переносов строк и управляющих символов" | "Выберите корректные дату и время" | "Дата и время встречи должны быть позже текущего момента" | "Бюджет должен быть от 500 до 100000 ₽ с шагом 100 ₽" | "Выберите кухни из списка без повторов" | "Выберите формат встречи из списка"
 ```
 
 ## src/pages/meeting-form/ui/MeetingForm.styles.ts
@@ -993,7 +1162,7 @@ validateMeetingForm(values: FormValues, original?: Meeting, now?: Date): "" | "�
 Создаёт стили MeetingForm; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { grid: { flexDirection: "row"; flexWrap: "wrap"; }; week: { width: "14.2857%"; textAlign: "center"; fontSize: number; color: string; paddingVertical: number; }; day: { width: "14.2857%"; height: number; alignItems: "center"; justifyContent: "center"; }; wrap: { flexDirection: "row"; flexWrap: "wrap"; gap: number; }; hint: { fontSize: number; color: string; }; contentContainer: { paddingHorizontal: number; paddingBottom: number; }; titleSection: { paddingBottom: number; borderBottomWidth: number; }; previousMonthButton: { padding: number; }; monthLabel: { fontSize: number; fontWeight: "600"; color: string; }; nextMonthButton: { padding: number; }; dayLabel: { fontSize: number; }; timePickerButton: { padding: number; }; timeRow: { gap: number; }; timeLabel: { fontSize: number; color: string; }; inviteRow: { gap: number; }; inviteLabel: { color: string; fontSize: number; }; budgetLabel: { fontSize: number; fontWeight: "500"; color: string; }; districtLabel: { fontSize: number; color: string; }; formatSection: { borderBottomWidth: number; }; formatSelector: { flexDirection: "row"; padding: number; backgroundColor: string; borderRadius: number; }; formatOption: { flex: number; paddingVertical: number; alignItems: "center"; borderRadius: number; }; formatOptionLabel: { fontSize: number; }; error: { color: string; marginBottom: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ grid: { flexDirection: "row"; flexWrap: "wrap"; }; week: { width: string; textAlign: "center"; fontSize: number; color: string; paddingVertical: number; }; day: { width: string; height: number; alignItems: "center"; justifyContent: "center"; }; wrap: { flexDirection: "row"; flexWrap: "wrap"; gap: number; }; hint: { fontSize: number; color: string; }; contentContainer: { paddingHorizontal: number; paddingBottom: number; }; titleSection: { paddingBottom: number; borderBottomWidth: number; }; titleInput: { height: number; paddingVertical: number; }; previousMonthButton: { padding: number; }; monthLabel: { fontSize: number; fontWeight: "600"; color: string; }; nextMonthButton: { padding: number; }; dayLabel: { fontSize: number; }; timeSelectors: { flexDirection: "row"; alignItems: "flex-end"; gap: number; marginTop: number; }; timeSeparator: { fontSize: number; fontWeight: "400"; color: string; paddingBottom: number; }; budgetLabel: { fontSize: number; fontWeight: "500"; color: string; }; formatSection: { borderBottomWidth: number; }; formatSelector: { flexDirection: "row"; padding: number; backgroundColor: string; borderRadius: number; }; formatOption: { flex: number; paddingVertical: number; alignItems: "center"; borderRadius: number; }; formatOptionLabel: { fontSize: number; }; error: { color: string; marginBottom: number; }; }>
 ```
 
 ### getSelectedDay
@@ -1035,7 +1204,7 @@ getFormatLabel(colors: ThemeColors, selected: boolean): TextStyle
 Собирает данные новой встречи или изменяет предпочтения существующей встречи.
 
 ```typescript
-MeetingForm({ meeting, onSave, }: { meeting?: Meeting; onSave: (m: Meeting) => void; }): React.JSX.Element
+MeetingForm({ meeting, onSave, preferencesOnly, }: { meeting?: Meeting; onSave: (m: Meeting) => void; preferencesOnly?: boolean; }): React.JSX.Element
 ```
 
 ### shift
@@ -1053,7 +1222,7 @@ shift(n: number): void
 Создаёт стили MeetingsScreen; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { search: { backgroundColor: string; borderWidth: number; borderColor: string; borderRadius: number; paddingHorizontal: number; height: number; flexDirection: "row"; alignItems: "center"; gap: number; }; count: { fontSize: number; color: string; backgroundColor: string; width: number; height: number; lineHeight: number; textAlign: "center"; borderRadius: number; overflow: "hidden"; }; badge: { fontSize: number; paddingVertical: number; paddingHorizontal: number; borderRadius: number; }; fab: { position: "absolute"; right: number; bottom: number; width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; boxShadow: string; }; root: { flex: number; }; contentContainer: { padding: number; paddingBottom: number; }; greetingRow: { marginBottom: number; }; dateLabel: { color: string; fontSize: number; marginBottom: number; }; greeting: { color: string; fontSize: number; fontWeight: "700"; }; profileButton: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; }; avatarInitial: { fontSize: number; fontWeight: "600"; color: string; }; searchInput: { flex: number; fontSize: number; color: string; }; sectionHeader: { marginTop: number; marginBottom: number; }; tabsRow: { gap: number; }; tabLabel: { fontSize: number; }; meetingCard: { marginBottom: number; padding: number; boxShadow: string; }; meetingTitle: { fontSize: number; fontWeight: "600"; color: string; }; metadataRow: { justifyContent: "flex-start"; gap: number; }; dateRow: { gap: number; }; dateText: { fontSize: number; color: string; }; participantsRow: { gap: number; }; participantsText: { fontSize: number; color: string; }; emptyState: { padding: number; textAlign: "center"; }; }
+createStyles(colors: ThemeColors): Readonly<{ search: { backgroundColor: string; borderWidth: number; borderColor: string; borderRadius: number; paddingHorizontal: number; height: number; flexDirection: "row"; alignItems: "center"; gap: number; }; count: { fontSize: number; color: string; backgroundColor: string; width: number; height: number; lineHeight: number; textAlign: "center"; borderRadius: number; overflow: "hidden"; }; badge: { fontSize: number; paddingVertical: number; paddingHorizontal: number; borderRadius: number; }; fab: { position: "absolute"; right: number; bottom: number; width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; boxShadow: string; }; root: { flex: number; }; contentContainer: { padding: number; paddingBottom: number; }; greetingRow: { marginBottom: number; }; dateLabel: { color: string; fontSize: number; marginBottom: number; }; greeting: { color: string; fontSize: number; fontWeight: "700"; }; profileButton: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; }; avatarInitial: { fontSize: number; fontWeight: "600"; color: string; }; searchInput: { flex: number; fontSize: number; color: string; }; sectionHeader: { marginTop: number; marginBottom: number; }; tabsRow: { gap: number; }; tabLabel: { fontSize: number; }; meetingCard: { marginBottom: number; padding: number; boxShadow: string; }; meetingTitle: { fontSize: number; fontWeight: "600"; color: string; }; metadataRow: { justifyContent: "flex-start"; gap: number; }; dateRow: { gap: number; }; dateText: { fontSize: number; color: string; }; participantsRow: { gap: number; }; participantsText: { fontSize: number; color: string; }; emptyState: { padding: number; textAlign: "center"; }; }>
 ```
 
 ### getSectionLabel
@@ -1089,7 +1258,7 @@ MeetingsScreen({ controller, }: { controller: { store: Store; setScreen: (screen
 Создаёт стили Onboarding; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { root: { flex: number; paddingHorizontal: number; paddingTop: number; }; logo: { fontSize: number; fontWeight: "700"; color: string; }; art: { width: "100%"; borderRadius: number; overflow: "hidden"; marginBottom: number; }; title: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; marginBottom: number; }; text: { fontSize: number; lineHeight: number; color: string; }; logoAccent: { color: string; }; content: { flex: number; }; illustrationSpacing: { marginTop: number; marginBottom: number; }; pagination: { justifyContent: "center"; gap: number; marginBottom: number; }; indicator: { height: number; borderRadius: number; }; nextButtonLabel: { fontSize: number; fontWeight: "600"; }; skipButton: { paddingVertical: number; alignItems: "center"; }; skipLabel: { color: string; fontSize: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ root: { flex: number; paddingHorizontal: number; paddingTop: number; }; logo: { fontSize: number; fontWeight: "700"; color: string; }; art: { width: string; borderRadius: number; overflow: "hidden"; marginBottom: number; }; title: { fontSize: number; lineHeight: number; fontWeight: "600"; color: string; marginBottom: number; }; text: { fontSize: number; lineHeight: number; color: string; }; logoAccent: { color: string; }; content: { flex: number; }; illustrationSpacing: { marginTop: number; marginBottom: number; }; pagination: { justifyContent: "center"; gap: number; marginBottom: number; }; indicator: { height: number; borderRadius: number; }; nextButtonLabel: { fontSize: number; fontWeight: "600"; }; skipButton: { paddingVertical: number; alignItems: "center"; }; skipLabel: { color: string; fontSize: number; }; }>
 ```
 
 ### getIllustrationSize
@@ -1125,7 +1294,7 @@ Onboarding({ onDone, onLogin, }: { onDone: () => void; onLogin: () => void; }): 
 Создаёт стили ProfileScreen; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { sectionLabel: { fontSize: number; fontWeight: "600"; letterSpacing: number; color: string; }; settingIcon: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; }; profileHeader: { backgroundColor: string; alignItems: "center"; paddingVertical: number; gap: number; }; avatarButton: { width: number; height: number; backgroundColor: string; borderRadius: number; borderWidth: number; borderColor: string; alignItems: "center"; justifyContent: "center"; marginBottom: number; }; avatarImage: { width: number; height: number; borderRadius: number; }; avatarInitial: { fontSize: number; color: string; }; editBadge: { position: "absolute"; right: number; bottom: number; backgroundColor: string; borderWidth: number; borderColor: string; padding: number; borderRadius: number; }; profileName: { fontSize: number; fontWeight: "600"; color: string; }; profileEmail: { fontSize: number; fontWeight: "600"; color: string; }; content: { padding: number; gap: number; }; calendarCard: { backgroundColor: string; }; calendarRow: { gap: number; }; calendarIconLabel: { color: string; fontSize: number; }; calendarInfo: { flex: number; }; settingTitle: { fontSize: number; color: string; }; calendarStatus: { fontSize: number; marginTop: number; }; configureLink: { fontSize: number; fontWeight: "600"; color: string; }; settingsCard: { backgroundColor: string; padding: number; gap: number; }; settingRow: { padding: number; gap: number; borderColor: string; }; settingInfo: { flex: number; }; settingLabel: { fontSize: number; color: string; }; settingDescription: { fontSize: number; color: string; marginTop: number; }; signOutButton: { height: number; borderRadius: number; backgroundColor: string; borderWidth: number; borderColor: string; alignItems: "center"; justifyContent: "center"; flexDirection: "row"; gap: number; }; signOutLabel: { fontSize: number; color: string; }; }
+createStyles(colors: ThemeColors): Readonly<{ sectionLabel: { fontSize: number; fontWeight: "600"; letterSpacing: number; color: string; }; settingIcon: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center"; }; profileHeader: { backgroundColor: string; alignItems: "center"; paddingVertical: number; gap: number; }; avatarButton: { width: number; height: number; backgroundColor: string; borderRadius: number; borderWidth: number; borderColor: string; alignItems: "center"; justifyContent: "center"; marginBottom: number; }; avatarImage: { width: number; height: number; borderRadius: number; }; avatarInitial: { fontSize: number; color: string; }; editBadge: { position: "absolute"; right: number; bottom: number; backgroundColor: string; borderWidth: number; borderColor: string; padding: number; borderRadius: number; }; profileName: { fontSize: number; fontWeight: "600"; color: string; }; profileEmail: { fontSize: number; fontWeight: "600"; color: string; }; content: { padding: number; gap: number; }; calendarCard: { backgroundColor: string; }; calendarRow: { gap: number; }; calendarIconLabel: { color: string; fontSize: number; }; calendarInfo: { flex: number; }; settingTitle: { fontSize: number; color: string; }; calendarStatus: { fontSize: number; marginTop: number; }; configureLink: { fontSize: number; fontWeight: "600"; color: string; }; settingsCard: { backgroundColor: string; padding: number; gap: number; }; settingRow: { padding: number; gap: number; borderColor: string; }; settingInfo: { flex: number; }; settingLabel: { fontSize: number; color: string; }; settingDescription: { fontSize: number; color: string; marginTop: number; }; signOutButton: { height: number; borderRadius: number; backgroundColor: string; borderWidth: number; borderColor: string; alignItems: "center"; justifyContent: "center"; flexDirection: "row"; gap: number; }; signOutLabel: { fontSize: number; color: string; }; }>
 ```
 
 ### getCalendarStatus
@@ -1161,7 +1330,7 @@ ProfileScreen({ controller, }: { controller: { signOut: () => void; store: Store
 Создаёт стили Toast; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { card: { position: "absolute"; left: number; right: number; zIndex: number; elevation: number; backgroundColor: string; borderRadius: number; borderLeftWidth: number; overflow: "hidden"; boxShadow: string; }; row: { flexDirection: "row"; alignItems: "center"; gap: number; padding: number; minHeight: number; }; icon: { width: number; height: number; borderRadius: number; alignItems: "center"; justifyContent: "center"; }; symbol: { fontFamily: string; fontSize: number; fontWeight: "700"; color: string; }; text: { flex: number; fontFamily: string; fontSize: number; lineHeight: number; color: string; }; cardBackground: { backgroundColor: string; }; progressTrack: { height: number; backgroundColor: string; }; progressBar: { height: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ card: { position: "absolute"; left: number; right: number; zIndex: number; elevation: number; backgroundColor: string; borderRadius: number; borderLeftWidth: number; overflow: "hidden"; boxShadow: string; }; row: { flexDirection: "row"; alignItems: "center"; gap: number; padding: number; minHeight: number; }; icon: { width: number; height: number; borderRadius: number; alignItems: "center"; justifyContent: "center"; }; symbol: { fontFamily: string; fontSize: number; fontWeight: "700"; color: string; }; text: { flex: number; fontFamily: string; fontSize: number; lineHeight: number; color: string; }; cardBackground: { backgroundColor: string; }; progressTrack: { height: number; backgroundColor: string; }; progressBar: { height: number; }; }>
 ```
 
 ### getToastEntrance
@@ -1169,7 +1338,7 @@ createStyles(colors: ThemeColors): { card: { position: "absolute"; left: number;
 Связывает анимированное появление уведомления с прозрачностью и смещением.
 
 ```typescript
-getToastEntrance(top: number, entrance: Animated.Value, color: string): Animated.WithAnimatedObject<ViewStyle>
+getToastEntrance(top: number, entrance: Animated.Value, color: string): { top: number; borderLeftColor: string; opacity: Animated.Value; transform: { translateY: Animated.Interpolation<0 | -20>; }[]; }
 ```
 
 ### getToastIconColor
@@ -1185,7 +1354,7 @@ getToastIconColor(color: string): ViewStyle
 Связывает ширину полосы уведомления с анимированным значением.
 
 ```typescript
-getToastProgress(progress: Animated.Value, color: string): Animated.WithAnimatedObject<ViewStyle>
+getToastProgress(progress: Animated.Value, color: string): { backgroundColor: string; width: Animated.Interpolation<"100%" | "0%">; }
 ```
 
 ## src/shared/ui/Toast.tsx
@@ -1205,7 +1374,7 @@ Toast({ text, type, onDismiss, }: { text: string; type: ToastType; onDismiss: ()
 Создаёт стили DialogHost; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { overlay: { flex: number; backgroundColor: string; justifyContent: "flex-end"; alignItems: "center"; }; dialog: { width: "100%"; maxWidth: number; maxHeight: "88%"; backgroundColor: string; borderTopLeftRadius: number; borderTopRightRadius: number; paddingHorizontal: number; paddingTop: number; paddingBottom: number; }; handle: { width: number; height: number; borderRadius: number; backgroundColor: string; alignSelf: "center"; marginBottom: number; }; dialogBackground: { backgroundColor: string; }; dialogHeader: { marginBottom: number; }; dialogContent: { gap: number; paddingBottom: number; }; closeButton: { alignItems: "center"; padding: number; }; closeLabel: { color: string; fontSize: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ overlay: { flex: number; backgroundColor: string; justifyContent: "flex-end"; alignItems: "center"; }; dialog: { width: string; maxWidth: number; maxHeight: string; backgroundColor: string; borderTopLeftRadius: number; borderTopRightRadius: number; paddingHorizontal: number; paddingTop: number; paddingBottom: number; }; handle: { width: number; height: number; borderRadius: number; backgroundColor: string; alignSelf: "center"; marginBottom: number; }; dialogBackground: { backgroundColor: string; }; dialogHeader: { marginBottom: number; }; dialogContent: { gap: number; paddingBottom: number; }; closeButton: { alignItems: "center"; padding: number; }; closeLabel: { color: string; fontSize: number; }; }>
 ```
 
 ## src/widgets/dialogs/ui/DialogHost.tsx
@@ -1215,7 +1384,7 @@ createStyles(colors: ThemeColors): { overlay: { flex: number; backgroundColor: s
 Показывает выбранный диалог в общей модальной оболочке и уведомление над ним.
 
 ```typescript
-DialogHost({ controller, }: { controller: { dialog: DialogName; setDialog: (dialog: DialogName) => void; toast: ToastNotification | null; dismissToast: () => void; sharePlaceInChat: () => void; pickAttachment: () => Promise<void>; confirmCurrentBooking: () => void; booking: Restaurant; showToast: (type: ToastType, message: string) => void; cancelCurrentBooking: () => void; meeting: Meeting; store: Store; update: (patch: Partial<Store>) => void; saveProfile: () => void; editName: string; setEditName: (value: string) => void; editEmail: string; setEditEmail: (value: string) => void; pickAvatar: () => Promise<void>; filterBudget: string; setFilterBudget: (value: string) => void; filterCuisine: string; setFilterCuisine: (value: string) => void; filterDistance: string; setFilterDistance: (value: string) => void; inviteParticipant: () => void; inviteName: string; setInviteName: (value: string) => void; share: () => void; selectLeader: () => void; setScreen: (screen: Screen) => void; removeParticipant: (name: string) => void; }; }): React.JSX.Element
+DialogHost({ controller, }: { controller: import("../../../app/model/useAppController").AppController; }): React.JSX.Element
 ```
 
 ## src/widgets/navigation/ui/AppHeader.styles.ts
@@ -1225,7 +1394,7 @@ DialogHost({ controller, }: { controller: { dialog: DialogName; setDialog: (dial
 Создаёт стили AppHeader; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { header: { minHeight: number; paddingHorizontal: number; borderBottomWidth: number; borderColor: string; flexDirection: "row"; alignItems: "center"; }; titleContainer: { flex: number; }; title: { fontSize: number; fontWeight: "600"; color: string; }; onlineStatus: { fontSize: number; color: string; marginTop: number; }; cancelButton: { padding: number; }; cancelLabel: { fontSize: number; color: string; }; }
+createStyles(colors: ThemeColors): Readonly<{ header: { minHeight: number; paddingHorizontal: number; borderBottomWidth: number; borderColor: string; flexDirection: "row"; alignItems: "center"; }; titleContainer: { flex: number; }; title: { fontSize: number; fontWeight: "600"; color: string; }; onlineStatus: { fontSize: number; color: string; marginTop: number; }; cancelButton: { padding: number; }; cancelLabel: { fontSize: number; color: string; }; }>
 ```
 
 ### getTitleAlignment
@@ -1243,7 +1412,7 @@ getTitleAlignment(editing: boolean): ViewStyle
 Показывает заголовок и действия, соответствующие текущему экрану.
 
 ```typescript
-AppHeader({ controller, }: { controller: { screen: Screen; setDialog: (dialog: DialogName) => void; meeting: Meeting; share: () => void; goBack: () => void; title: string; }; }): React.JSX.Element
+AppHeader({ controller, }: { controller: { screen: Screen; setDialog: (dialog: DialogName) => void; meeting?: Meeting; share: () => void; goBack: () => void; title: string; }; }): React.JSX.Element
 ```
 
 ## src/widgets/navigation/ui/BottomNavigation.styles.ts
@@ -1253,7 +1422,7 @@ AppHeader({ controller, }: { controller: { screen: Screen; setDialog: (dialog: D
 Создаёт стили BottomNavigation; значения зависят от переданной палитры, если она используется.
 
 ```typescript
-createStyles(colors: ThemeColors): { tabs: { flexDirection: "row"; borderTopWidth: number; borderColor: string; backgroundColor: string; }; tab: { flex: number; alignItems: "center"; gap: number; paddingVertical: number; }; tabLabel: { fontSize: number; }; }
+createStyles(colors: ThemeColors): Readonly<{ tabs: { flexDirection: "row"; borderTopWidth: number; borderColor: string; backgroundColor: string; }; tab: { flex: number; alignItems: "center"; gap: number; paddingVertical: number; }; tabLabel: { fontSize: number; }; }>
 ```
 
 ### getTabLabel
