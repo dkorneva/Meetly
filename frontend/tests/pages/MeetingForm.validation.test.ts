@@ -1,3 +1,4 @@
+import { catalogFilters } from "../catalogFilters";
 import { validateMeetingForm, validateParticipant } from "../../src/pages/meeting-form/model/validation";
 import { meetingFormValues } from "./meetingFormValues";
 
@@ -34,7 +35,7 @@ describe("Участники", () => {
 
 describe("Бюджет и варианты выбора", () => {
   test.each([
-    [500, true], [5000, true], [400, false], [5100, false], [550, false],
+    [500, true], [5000, true], [400, false], [5100, true], [7200, true], [100000, true], [100100, false], [550, false],
     [1500.5, false], [NaN, false], [Infinity, false],
   ])("бюджет %s: допустимость %s", (budget, accepted) => {
     expect(validateMeetingForm({ ...meetingFormValues(), budget }, undefined, now) === "").toBe(accepted);
@@ -42,9 +43,8 @@ describe("Бюджет и варианты выбора", () => {
   test.each([
     [{ cuisines: [] }, true], [{ cuisines: ["Кофе", "Бар"] }, true],
     [{ cuisines: ["Кофе", "Кофе"] }, false], [{ cuisines: ["Нет такой кухни"] }, false],
-    [{ district: "Не важно" }, true], [{ district: "" }, false], [{ district: "Нет такого района" }, false],
     [{ format: "Не важно" }, true], [{ format: "" }, false], [{ format: "Нет такого формата" }, false],
   ])("поля %j: допустимость %s", (patch, accepted) => {
-    expect(validateMeetingForm({ ...meetingFormValues(), ...patch }, undefined, now) === "").toBe(accepted);
+    expect(validateMeetingForm({ ...meetingFormValues(), ...patch }, undefined, now, catalogFilters.cuisines) === "").toBe(accepted);
   });
 });

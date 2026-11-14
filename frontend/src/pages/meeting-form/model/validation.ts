@@ -2,11 +2,9 @@ import type { Meeting } from "../../../entities/meeting";
 import { validateParticipant } from "../../../shared/lib/participants";
 export { validateParticipant } from "../../../shared/lib/participants";
 
-export const cuisineOptions = ["Итальянская", "Японская", "Русская", "Кофе", "Бар", "Вегетарианская"];
-export const districtOptions = ["Центр", "Арбат", "Тверской", "Патриаршие", "Не важно"];
 export const formatOptions = ["В помещении", "На улице", "Не важно"];
 
-type FormValues = Pick<Meeting, "title" | "date" | "time" | "participants" | "budget" | "cuisines" | "district" | "format">;
+type FormValues = Pick<Meeting, "title" | "date" | "time" | "participants" | "budget" | "cuisines" | "format">;
 
 /**
  * Проверяет поля перед сохранением встречи, разрешая прежнее время редактируемой встречи.
@@ -15,7 +13,7 @@ type FormValues = Pick<Meeting, "title" | "date" | "time" | "participants" | "bu
  * @param now - Текущий момент по местному времени; передаётся явно в тестах.
  * @returns Первая ошибка или пустая строка, если форма корректна.
  */
-export function validateMeetingForm(values: FormValues, original?: Meeting, now = new Date()) {
+export function validateMeetingForm(values: FormValues, original?: Meeting, now = new Date(), allowedCuisines?: readonly string[], allowedFormats: readonly string[] = formatOptions) {
   const title = values.title.trim();
   if (!title) return "Введите название встречи";
   if (Array.from(title).length < 2 || Array.from(title).length > 100)
@@ -40,12 +38,12 @@ export function validateMeetingForm(values: FormValues, original?: Meeting, now 
     if (error) return error;
   }
   if (!Number.isFinite(values.budget) || !Number.isInteger(values.budget) ||
-      values.budget < 500 || values.budget > 5000 || values.budget % 100 !== 0)
-    return "Бюджет должен быть от 500 до 5000 ₽ с шагом 100 ₽";
-  if (values.cuisines.some((item) => !cuisineOptions.includes(item)) ||
+      values.budget < 500 || values.budget > 100000 || values.budget % 100 !== 0)
+    return "Бюджет должен быть от 500 до 100000 ₽ с шагом 100 ₽";
+  if (values.cuisines.length > 100 || JSON.stringify(values.cuisines).length > 2000 ||
+      values.cuisines.some((item) => !item || item.length > 80 || (allowedCuisines && !allowedCuisines.includes(item))) ||
       new Set(values.cuisines).size !== values.cuisines.length)
     return "Выберите кухни из списка без повторов";
-  if (!districtOptions.includes(values.district)) return "Выберите район из списка";
-  if (!formatOptions.includes(values.format)) return "Выберите формат встречи из списка";
+  if (!allowedFormats.includes(values.format)) return "Выберите формат встречи из списка";
   return "";
 }

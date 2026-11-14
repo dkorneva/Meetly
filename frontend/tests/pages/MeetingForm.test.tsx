@@ -11,7 +11,7 @@ describe("MeetingForm", () => {
   test("не сохраняет пустое название", async () => {
     const onSave = jest.fn();
     const ui = await render(<MeetingForm onSave={onSave} />);
-    await fireEvent.changeText(ui.getByDisplayValue("Ужин с командой"), "   ");
+    await fireEvent.changeText(ui.getByDisplayValue(""), "   ");
     await fireEvent.press(ui.getByRole("button", { name: "Создать встречу" }));
     expect(ui.getByText("Введите название встречи")).toBeOnTheScreen();
     expect(onSave).not.toHaveBeenCalled();
@@ -19,35 +19,51 @@ describe("MeetingForm", () => {
   test("создаёт встречу с введённым названием и выбранной датой", async () => {
     const onSave = jest.fn();
     const ui = await render(<MeetingForm onSave={onSave} />);
-    await fireEvent.changeText(ui.getByDisplayValue("Ужин с командой"), " Новая встреча ");
+    await fireEvent.changeText(ui.getByDisplayValue(""), " Новая встреча ");
     await fireEvent.press(ui.getByText("15"));
     await fireEvent.press(ui.getByRole("button", { name: "Создать встречу" }));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ title: "Новая встреча", date: "2026-11-15", status: "voting", votes: {} }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Новая встреча",
+        date: "2026-11-15",
+        status: "voting",
+        votes: {},
+      }),
+    );
+  });
+  test("часы и минуты выбираются отдельно, район отсутствует в форме и сохранённых данных", async () => {
+    const onSave = jest.fn();
+    const ui = await render(<MeetingForm onSave={onSave} />);
+    await fireEvent.changeText(ui.getByDisplayValue(""), "Вечерняя встреча");
+    await fireEvent.press(ui.getByText("15"));
+    await fireEvent.press(ui.getByRole("combobox", {name:"Часы встречи"}));
+    await fireEvent.press(ui.getByRole("button", {name:"23"}));
+    await fireEvent.press(ui.getByRole("combobox", {name:"Минуты встречи"}));
+    await fireEvent.press(ui.getByRole("button", {name:"47"}));
+    expect(ui.queryByText("Район")).toBeNull();
+    await fireEvent.press(ui.getByRole("button", {name:"Создать встречу"}));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({time:"23:47"}));
+    expect(onSave.mock.calls[0][0]).not.toHaveProperty("district");
   });
   test("передаёт изменённое название, сохраняя id и результаты голосования", async () => {
-    const c = makeController(), onSave = jest.fn();
-    const ui = await render(<MeetingForm meeting={c.meeting} onSave={onSave} />);
-    await fireEvent.changeText(ui.getByDisplayValue(c.meeting.title), "Новое название");
-    await fireEvent.press(ui.getByRole("button", { name: "Сохранить предпочтения" }));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ title: "Новое название", id: c.meeting.id, votes: c.meeting.votes }));
-  });
-  test("добавляет нового участника", async () => {
-    const onSave = jest.fn();
-    const ui = await render(<MeetingForm onSave={onSave} />);
-    await fireEvent.press(ui.getByText("Пригласить"));
-    await fireEvent.changeText(ui.getByPlaceholderText("Имя участника"), "Саша");
-    await fireEvent.press(ui.getByRole("button", { name: "Добавить" }));
-    await fireEvent.press(ui.getByRole("button", { name: "Создать встречу" }));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ participants: ["Аня", "Полина", "Маша", "Илья", "Саша"] }));
-  });
-  test("не добавляет участника с уже существующим именем", async () => {
-    const onSave = jest.fn();
-    const ui = await render(<MeetingForm onSave={onSave} />);
-    await fireEvent.press(ui.getByText("Пригласить"));
-    await fireEvent.changeText(ui.getByPlaceholderText("Имя участника"), "полина");
-    await fireEvent.press(ui.getByRole("button", { name: "Добавить" }));
-    expect(ui.getByText("Этот участник уже добавлен")).toBeOnTheScreen();
-    await fireEvent.press(ui.getByRole("button", { name: "Создать встречу" }));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ participants: ["Аня", "Полина", "Маша", "Илья"] }));
+    const c = makeController(),
+      onSave = jest.fn();
+    const ui = await render(
+      <MeetingForm meeting={c.meeting} onSave={onSave} />,
+    );
+    await fireEvent.changeText(
+      ui.getByDisplayValue(c.meeting.title),
+      "Новое название",
+    );
+    await fireEvent.press(
+      ui.getByRole("button", { name: "Сохранить предпочтения" }),
+    );
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Новое название",
+        id: c.meeting.id,
+        votes: c.meeting.votes,
+      }),
+    );
   });
 });
