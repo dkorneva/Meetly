@@ -7,7 +7,7 @@ import { useThemedStyles, type ThemeColors } from "../theme/index";
  * @param colors - Палитра текущей темы.
  * @returns Вычисленное значение; точный тип указан в сигнатуре TypeScript.
  */
-export const createUiStyles = (colors: ThemeColors) =>
+const createUiStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     label: { fontSize: 14, color: colors.label },
     heading: {

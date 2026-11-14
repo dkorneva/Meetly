@@ -1,7 +1,7 @@
 import type { Animated, ViewStyle } from "react-native";
 import { StyleSheet } from "react-native";
 import type { ThemeColors } from "../theme/index";
-// ViewStyle описывает допустимые стили контейнера, тип TypeScript, 
+// ViewStyle описывает допустимые стили контейнера, тип TypeScript,
 // который проверяет, подходят ли записанные свойства для оформления View
 /**
  * Создаёт стили Toast; значения зависят от переданной палитры, если она используется.
@@ -17,7 +17,7 @@ export const createStyles = (colors: ThemeColors) =>
       right: 16,
       zIndex: 10000,
       elevation: 10, // задаёт высоту элемента на Android, влияющую на тень и наложение
-      backgroundColor: colors.surface, 
+      backgroundColor: colors.surface,
       borderRadius: 8,
       borderLeftWidth: 4,
       overflow: "hidden",
@@ -67,14 +67,16 @@ export function getToastEntrance(
   top: number,
   entrance: Animated.Value,
   color: string,
-): Animated.WithAnimatedObject<ViewStyle> { // функция возвращает стили контейнера, в которых могут использоваться анимируемые значения
+) {
+  // TypeScript выводит тип анимированного стиля из результата.
   return {
     top: top + 12,
     borderLeftColor: color, // окрашивает левую границу толщиной 4, которую мы объявили в card - индикатор типа уведомления
     opacity: entrance,
     transform: [
       {
-        translateY: entrance.interpolate({ // interpolate переводит значение из одного диапазона в другой
+        translateY: entrance.interpolate({
+          // interpolate переводит значение из одного диапазона в другой
           inputRange: [0, 1], // значение entrance: от начала до конца анимации
           outputRange: [-20, 0], // значение translateY: от -20 (сверху) до 0 (на месте)
         }),
@@ -100,10 +102,7 @@ export function getToastIconColor(color: string): ViewStyle {
  * @param color - Цвет элемента.
  * @returns Вычисленное значение; точный тип указан в сигнатуре TypeScript.
  */
-export function getToastProgress(
-  progress: Animated.Value,
-  color: string,
-): Animated.WithAnimatedObject<ViewStyle> {
+export function getToastProgress(progress: Animated.Value, color: string) {
   return {
     backgroundColor: color,
     width: progress.interpolate({
