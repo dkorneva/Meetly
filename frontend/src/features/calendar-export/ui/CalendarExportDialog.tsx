@@ -10,10 +10,13 @@ import { Text, useTheme, useThemedStyles } from "../../../shared/theme/index";
 import { Button, Row } from "../../../shared/ui/controls/index";
 import { useUiStyles } from "../../../shared/ui/shared.styles";
 import { Icon } from "../../../shared/ui/Icon";
-import { createStyles, getMeetingSelection } from "./CalendarExportDialog.styles";
+import {
+  createStyles,
+  getMeetingSelection,
+} from "./CalendarExportDialog.styles";
 
 /**
- * Показывает настройки календаря; кнопка экспорта пока не выполняет действий.
+ * Экспортирует выбранную встречу в ICS для импорта в Яндекс Календарь.
  *
  * @param props - Свойства компонента: данные для отображения и обработчики действий.
  * @returns Элементы интерфейса React.
@@ -25,7 +28,8 @@ export default function CalendarExportDialog({
     store: Store;
     setDialog: (dialog: DialogName) => void;
     showToast: (type: ToastType, message: string) => void;
-    meeting: Meeting;
+    meeting?: Meeting;
+    exportMeeting: (id: string) => void;
     update: (patch: Partial<Store>) => void;
   };
 }) {
@@ -34,13 +38,15 @@ export default function CalendarExportDialog({
   const uiStyles = useUiStyles(); // создание стилей общих компонентов
 
   const { store, setDialog, showToast, meeting, update } = controller;
-  const [selectedId, setSelectedId] = useState(meeting.id); // идентификатор встречи, которую пользователь выбрал для экспорта в календарь
+  const [selectedId, setSelectedId] = useState(
+    meeting?.id ?? store.meetings[0]?.id ?? "",
+  ); // идентификатор встречи, которую пользователь выбрал для экспорта в календарь
   const selected = store.meetings.find((item) => item.id === selectedId); // объект выбранной встречи
   return (
     <>
       <Text style={uiStyles.muted}>
-        Выберите встречу и сохраните файл. В Яндекс Календаре откройте
-        «Добавить» → «Импорт» → «Из файла» и выберите его. Проверьте дату и
+        Выберите встречу и сохраните файл. В Яндекс Календаре откройте «Новый
+        календарь» → «Импорт» → «Из файла» и выберите его. Проверьте дату и
         время перед импортом.
       </Text>
       {/* Внутри View элементы по умолчанию располагаются вертикально. */}
@@ -68,7 +74,7 @@ export default function CalendarExportDialog({
               <View style={styles.meetingInfo}>
                 <Text style={uiStyles.label}>{item.title}</Text>
                 <Text style={uiStyles.muted}>
-                  {item.date.split("-").reverse().join(".")} · {item.time}
+                  {item.date.split("-").reverse().join(".")}, {item.time}
                 </Text>
               </View>
               {selectedId === item.id && (
@@ -83,8 +89,8 @@ export default function CalendarExportDialog({
         style={styles.exportButton}
         textStyle={styles.exportButtonLabel}
         disabled={!store.calendar || !selected}
-        // Экспорт будет реализован позже; пока нажатие ничего не делает.
-        onPress={() => {}}
+        // Сервер проверяет участие и формирует файл из актуальных данных встречи.
+        onPress={() => controller.exportMeeting(selectedId)}
       />
       <Button
         title="Открыть Яндекс Календарь"
