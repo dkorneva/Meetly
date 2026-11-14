@@ -1,0 +1,51 @@
+{
+  "name": "meetly-server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "test": "npm run build && node --test --test-concurrency=1 test/*.test.cjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "catalog:photos": "node scripts/catalog-photos.cjs",
+    "catalog:fetch": "node scripts/fetch-catalog.cjs",
+    "catalog:import": "node scripts/import-catalog.cjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/core": "^11.1.0",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/platform-express": "^11.1.0",
+    "@nestjs/platform-socket.io": "^11.1.0",
+    "@nestjs/swagger": "^11.4.8",
+    "@nestjs/throttler": "^6.4.0",
+    "@nestjs/websockets": "^11.1.0",
+    "@prisma/client": "6.19.3",
+    "argon2": "^0.44.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "dotenv": "^17.2.0",
+    "helmet": "^8.1.0",
+    "leaflet": "^1.9.4",
+    "multer": "^2.0.2",
+    "opening_hours": "^3.15.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "sharp": "^0.35.5",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.0.0",
+    "@types/supertest": "^6.0.0",
+    "prisma": "6.19.3",
+    "socket.io-client": "^4.8.4",
+    "supertest": "^7.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.0"
+  }
+}
