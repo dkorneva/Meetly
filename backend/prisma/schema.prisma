@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlserver"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+  email String @unique @db.NVarChar(254)
+  name String @db.NVarChar(30)
+  passwordHash String @db.VarChar(255)
+  avatarId String? @db.UniqueIdentifier
+  reminders Boolean @default(false)
+  dark Boolean @default(false)
+  calendar Boolean @default(true)
+  createdAt DateTime @default(now())
+  members Member[]
+  sessions Session[]
+  ownedMeetings Meeting[]
+  sentMessages Message[]
+  files File[]
+  restaurants Restaurant[]
+}
+model Session {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+  userId String @db.UniqueIdentifier
+  tokenHash String @unique @db.VarChar(64)
+  expiresAt DateTime
+  user User @relation(fields:[userId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+  @@index([userId])
+}
+model Meeting {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+  ownerId String @db.UniqueIdentifier
+  owner User @relation(fields:[ownerId],references:[id],onDelete:NoAction,onUpdate:NoAction)
+  title String @db.NVarChar(100)
+  startsAt DateTime
+  status String @default("voting") @db.VarChar(20)
+  restaurantId String? @db.UniqueIdentifier
+  bookedAt DateTime?
+  completedAt DateTime?
+  city String @default("Москва") @db.NVarChar(100)
+  format String @db.NVarChar(30)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version Int @default(0)
+  members Member[]
+  candidates Candidate[]
+  messages Message[]
+  invitations Invitation[]
+  files File[]
+  @@index([ownerId])
+  @@index([startsAt])
+}
+model Member {
+  meetingId String @db.UniqueIdentifier
+  userId String @db.UniqueIdentifier
+  budget Int @default(1500)
+  cuisines String @default("[]") @db.NVarChar(2000)
+  meeting Meeting @relation(fields:[meetingId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+  user User @relation(fields:[userId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+  votes Vote[]
+  @@id([meetingId,userId])
+  @@index([userId])
+}
+model Restaurant {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+  sourceId String @unique @default(uuid()) @db.VarChar(100)
+  source String @default("user") @db.VarChar(20)
+  providerId String @default("") @db.VarChar(512)
+  detailsFetchedAt DateTime?
+  openingHours String @default("") @db.NVarChar(500)
+  name String @db.NVarChar(150)
+  address String @db.NVarChar(500)
+  city String @db.NVarChar(100)
+  district String @db.NVarChar(100)
+  latitude Float
+  longitude Float
+  cuisine String @db.NVarChar(150)
+  price Int?
+  priceCurrency String @default("RUB") @db.VarChar(3)
+  priceSource String? @db.NVarChar(1000)
+  priceSourceId String? @db.VarChar(50)
+  priceFetchedAt DateTime?
+  priceMatchDistance Float?
+  catalogArea String? @db.VarChar(30)
+  catalogActive Boolean @default(false)
+  osmType String? @db.VarChar(10)
+  osmId String? @db.VarChar(20)
+  osmVersion Int?
+  osmUpdatedAt DateTime?
+  importedAt DateTime?
+  rawTags String? @db.NVarChar(Max)
+  dietVegetarian String @default("unknown") @db.VarChar(10)
+  dietVegan String @default("unknown") @db.VarChar(10)
+  phone String @default("") @db.NVarChar(50)
+  website String @default("") @db.NVarChar(1000)
+  outdoor Boolean @default(false)
+  createdBy String? @db.UniqueIdentifier
+  creator User? @relation(fields:[createdBy],references:[id],onDelete:NoAction,onUpdate:NoAction)
+  createdAt DateTime @default(now())
+  candidates Candidate[]
+  cuisines RestaurantCuisine[]
+  @@index([city,district])
+  @@index([catalogArea,catalogActive,price])
+  @@index([catalogArea,latitude,longitude])
+}
+model RestaurantCuisine {
+  restaurantId String @db.UniqueIdentifier
+  code String @db.VarChar(50)
+  restaurant Restaurant @relation(fields:[restaurantId],references:[id],onDelete:Cascade,onUpdate:NoAction)
+  @@id([restaurantId,code])
+  @@index([code,restaurantId])
+}
+model Candidate {
+  origin String @default("manual") @db.VarChar(10)
+  meetingId String @db.UniqueIdentifier
+  restaurantId String @db.UniqueIdentifier
+  meeting Meeting @relation(fields:[meetingId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+  restaurant Restaurant @relation(fields:[restaurantId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+  votes Vote[]
+  @@id([meetingId,restaurantId])
+}
+model PlaceSearchArea {
+  key String @id @db.VarChar(100)
+  refreshedAt DateTime @default(now())
+}
+model Vote {
+  meetingId String @db.UniqueIdentifier
+  userId String @db.UniqueIdentifier
+  restaurantId String @db.UniqueIdentifier
+  candidate Candidate @relation(fields:[meetingId,restaurantId], references:[meetingId,restaurantId], onDelete: NoAction, onUpdate: NoAction)
+  member Member @relation(fields:[meetingId,userId],references:[meetingId,userId],onDelete:NoAction,onUpdate:NoAction)
+  @@id([meetingId,userId])
+}
+model Message {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+  meetingId String @db.UniqueIdentifier
+  senderId String @db.UniqueIdentifier
+  sender User @relation(fields:[senderId],references:[id],onDelete:NoAction,onUpdate:NoAction)
+  text String @db.NVarChar(4000)
+  fileId String? @db.UniqueIdentifier
+  kind String @default("text") @db.VarChar(20)
+  createdAt DateTime @default(now())
+  meeting Meeting @relation(fields:[meetingId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+  reactions Reaction[]
+  @@index([meetingId,createdAt,id])
+}
+model Reaction {
+  messageId String @db.UniqueIdentifier
+  userId String @db.UniqueIdentifier
+  message Message @relation(fields:[messageId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+  @@id([messageId,userId])
+}
+model Invitation {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+  meetingId String @db.UniqueIdentifier
+  tokenHash String @unique @db.VarChar(64)
+  expiresAt DateTime
+  revoked Boolean @default(false)
+  meeting Meeting @relation(fields:[meetingId], references:[id], onDelete: NoAction, onUpdate: NoAction)
+}
+model File {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+  ownerId String @db.UniqueIdentifier
+  owner User @relation(fields:[ownerId],references:[id],onDelete:NoAction,onUpdate:NoAction)
+  meetingId String? @db.UniqueIdentifier
+  meeting Meeting? @relation(fields:[meetingId],references:[id],onDelete:NoAction,onUpdate:NoAction)
+  name String @db.NVarChar(255)
+  mime String @db.VarChar(100)
+  data Bytes @db.VarBinary(Max)
+  createdAt DateTime @default(now())
+  @@index([ownerId])
+}
