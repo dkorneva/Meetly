@@ -1,13 +1,13 @@
 # Meetly
 
-Мобильное приложение для организации встреч, выбора заведения голосованием и общения участников. Клиент: React Native, Expo, TypeScript. Сервер: NestJS, Prisma, Microsoft SQL Server.
+Мобильное приложение для организации встреч, выбора заведения голосованием и общения участников. Клиент: React Native, Expo, TypeScript. Сервер: Express 5, Prisma, Microsoft SQL Server.
 
 ## Структура проекта
 
 ```text
 Meetly/
   frontend/  React Native, Expo и клиентские тесты
-  backend/   NestJS, Prisma, SQL Server и серверные тесты
+  backend/   Express, Prisma, SQL Server и серверные тесты
   docs/      общая документация
 ```
 
