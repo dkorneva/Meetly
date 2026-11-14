@@ -11,7 +11,12 @@ import { Avatars, Row } from "../../../shared/ui/controls/index";
 import { useUiStyles } from "../../../shared/ui/shared.styles";
 import { Icon } from "../../../shared/ui/Icon";
 
-import { Text, TextInput, useTheme, useThemedStyles } from "../../../shared/theme/index";
+import {
+  Text,
+  TextInput,
+  useTheme,
+  useThemedStyles,
+} from "../../../shared/theme/index";
 import {
   createStyles,
   getMeetingBadge,
@@ -60,8 +65,14 @@ export default function MeetingsScreen({
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <Row style={styles.greetingRow}>
           <View>
-            {/* Дата пока задана вручную, а первое слово имени берётся из профиля. */}
-            <Text style={styles.dateLabel}>Пятница, 24 мая</Text>
+            {/* Показываем текущую дату и имя авторизованного пользователя. */}
+            <Text style={styles.dateLabel}>
+              {new Date().toLocaleDateString("ru-RU", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </Text>
             <Text style={styles.greeting}>
               Привет, {store.name.split(" ")[0]}
             </Text>
@@ -147,8 +158,8 @@ export default function MeetingsScreen({
             {/* Название места выводим, только если ресторан уже выбран. */}
             {m.restaurantId && (
               <Text style={uiStyles.muted}>
-                {meetingPlace(m).name}
-                {m.bookedAt ? " · Бронь подтверждена" : ""}
+                {meetingPlace(m)?.name ?? "Место пока не выбрано"}
+                {m.bookedAt ? ", Бронь подтверждена" : ""}
               </Text>
             )}
             <Avatars names={m.participants} limit={3} />
