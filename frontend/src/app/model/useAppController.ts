@@ -543,10 +543,14 @@ export function useAppController() {
       );
       setDialog(null);
     });
-  /** Добавляет заведение в варианты встречи. */
-  const propose = (r: Restaurant) =>
+  /** Добавляет заведение во встречу из списка карты либо в текущую встречу. */
+  const propose = (r: Restaurant, meetingId?: string) =>
     run(async () => {
-      const m = requireMeeting();
+      const m = meetingId === undefined
+        ? requireMeeting()
+        : store.meetings.find(item => item.id === meetingId);
+      if (!m) throw new Error("Встреча больше недоступна");
+      if (m.status !== "voting") throw new Error("Голосование в этой встрече завершено");
       await api(`/meetings/${m.id}/candidates`, "POST", { restaurantId: r.id });
       await reload();
       showToast("success", "Место добавлено в голосование");
