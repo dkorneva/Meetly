@@ -12,32 +12,31 @@ const LABELS: Record<string, string> = {
 };
 export const CUISINES: Record<string, string[]> = {};
 for (const [code, label] of Object.entries(LABELS)) (CUISINES[label] ??= []).push(code);
-// Existing broad preferences remain compatible with saved meetings.
 CUISINES["Итальянская"].push("pizza");
 CUISINES["Японская"].push("sushi", "ramen");
 CUISINES["Вегетарианская"].push("vegan");
 /**
- * Возвращает русскую подпись кода кухни; неизвестный код сохраняется для доступности новых данных.
- * @param code Код кухни источника.
+ * Возвращает русскую подпись кода кухни; неизвестный код сохраняется для доступности новых данных
+ * @param code Код кухни источника
  */
 export function cuisineName(code: string) { return LABELS[code] ?? code; }
 /**
- * Разворачивает название кухни в коды, включая совместимые группы прежних предпочтений.
- * @param cuisine Название кухни или код из фильтра.
+ * Разворачивает название кухни в коды, включая совместимые группы прежних предпочтений
+ * @param cuisine Название кухни или код из фильтра
  */
 export function cuisineCodes(cuisine: string) { return CUISINES[cuisine] ?? [cuisine.toLowerCase()]; }
 /**
- * Проверяет точное совпадение токенов кухни с выбранным кодом или группой.
- * @param value Сохранённые коды кухонь либо значение заголовка.
- * @param cuisine Название кухни или код из фильтра.
+ * Проверяет точное совпадение токенов кухни с выбранным кодом или группой
+ * @param value Сохранённые коды кухонь либо значение заголовка
+ * @param cuisine Название кухни или код из фильтра
  */
 export function matchesCuisine(value: string, cuisine: string) {
   const codes = new Set(value.toLowerCase().split(/[;,\s]+/));
   return cuisineCodes(cuisine).some(code => codes.has(code));
 }
 /**
- * Формирует неповторяющиеся подписи кухонь для карточки заведения.
- * @param value Сохранённые коды кухонь либо значение заголовка.
+ * Формирует неповторяющиеся подписи кухонь для карточки заведения
+ * @param value Сохранённые коды кухонь либо значение заголовка
  */
 export function cuisineLabel(value: string) {
   return [...new Set(value.split(/[;,\s]+/).filter(Boolean).map(cuisineName))].join(", ");

@@ -5,7 +5,7 @@ import { MeetingsService } from "./meetings.service";
 import { MessageInput } from "./inputs";
 import { FilesService } from "./files.service";
 /**
- * Проверяет права на переписку, сохраняет сообщения и реакции, выдаёт страницы истории.
+ * Проверяет права на переписку, сохраняет сообщения и реакции, выдаёт страницы истории
  */
 export class ChatService {
   constructor(
@@ -14,11 +14,11 @@ export class ChatService {
     private readonly files: FilesService,
   ) {}
   /**
-   * Возвращает до 50 сообщений в хронологическом порядке и курсор предыдущей страницы; скрывает устаревшее служебное уведомление.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param before Курсор сообщения для загрузки более ранней страницы.
-   * @returns Страница items и nextCursor либо null в конце истории.
+   * Возвращает до 50 сообщений в хронологическом порядке и курсор предыдущей страницы; скрывает устаревшее служебное уведомление
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param before Курсор сообщения для загрузки более ранней страницы
+   * @returns Страница items и nextCursor либо null в конце истории 
    */
   async list(userId: string, id: string, before?: string) {
     await this.meetings.member(userId, id);

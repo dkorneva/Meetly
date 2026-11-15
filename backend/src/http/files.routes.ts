@@ -13,15 +13,19 @@ export function filesRoutes(services: Services) {
     res.status(201).json(await services.files.upload(userId(req), req.file, meetingId));
   });
   router.get("/:id", limit(), async function (req, res) {
-    const id = validate.uuid(req.params.id);
-    const token = validate.queryText(req.query.token);
-    const file = await services.files.download(id, token);
-    res.setHeader("Content-Type", file.mime);
-    res.setHeader("Cache-Control", "private, no-store");
-    let disposition = "attachment";
-    if (file.mime.startsWith("image/")) disposition = "inline";
-    res.setHeader("Content-Disposition", `${disposition}; filename*=UTF-8''${encodeURIComponent(file.name)}`);
-    res.send(Buffer.from(file.data));
+    const id = validate.uuid(req.params.id); // получает значение из адреса
+    const token = validate.queryText(req.query.token); // получение токена из ссылки
+    const file = await services.files.download(id, token); // получение файла с проверкой доступа:
+    // подпись и срок действия токена;
+    // что токен имеет назначение "file";
+    // что он выдан именно для запрошенного файла;
+    // что пользователь, указанный в токене, всё ещё имеет право получить файл
+    res.setHeader("Content-Type", file.mime); // Content-Type сообщает клиенту, что именно сервер отправляет (jpeg, png, pdf...)
+    res.setHeader("Cache-Control", "private, no-store"); // Сервер сообщает, что ответ содержит персональные данные и его не следует сохранять в кеше
+    let disposition = "attachment"; // поведение файла по умолчанию - attachement
+    if (file.mime.startsWith("image/")) disposition = "inline"; // если файл является изображением, поведение файла - inline
+    res.setHeader("Content-Disposition", `${disposition}; filename*=UTF-8''${encodeURIComponent(file.name)}`); // передача способа обработки и имени файла
+    res.send(Buffer.from(file.data)); // отправка данных файла клиенту
   });
   return router;
 }

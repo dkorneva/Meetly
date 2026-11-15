@@ -9,7 +9,7 @@ export interface ProfileInput {
   avatarId?: string | null;
 }
 /**
- * Читает и изменяет профиль без раскрытия хеша пароля и служебных полей аккаунта.
+ * Читает и изменяет профиль без раскрытия хеша пароля и служебных полей аккаунта
  */
 export class UsersService {
   constructor(
@@ -17,9 +17,9 @@ export class UsersService {
     private readonly files: FilesService,
   ) {}
   /**
-   * Возвращает публичные поля собственного профиля и временную ссылку на аватар.
-   * @param id ID запрашиваемой записи.
-   * @returns Профиль без пароля и служебных данных сессии.
+   * Возвращает публичные поля собственного профиля и временную ссылку на аватар
+   * @param id ID запрашиваемой записи
+   * @returns Профиль без пароля и служебных данных сессии
    */
   async me(id: string) {
     const user = await this.db.user.findUniqueOrThrow({
@@ -41,9 +41,9 @@ export class UsersService {
     };
   }
   /**
-   * Проверяет владение аватаром, нормализует email и сохраняет настройки собственного профиля.
-   * @param id ID запрашиваемой записи.
-   * @param input Данные операции после проверки HTTP-слоем.
+   * Проверяет владение аватаром, нормализует email и сохраняет настройки собственного профиля
+   * @param id ID запрашиваемой записи
+   * @param input Данные операции после проверки HTTP-слоем 
    */
   async update(id: string, input: ProfileInput) {
     if (

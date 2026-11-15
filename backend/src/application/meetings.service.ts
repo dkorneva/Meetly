@@ -16,26 +16,26 @@ import {
 
 } from "../domain/places";
 /**
- * Выполняет действия со встречами в транзакциях, проверяя участие, полномочия организатора и статус голосования.
+ * Выполняет действия со встречами в транзакциях, проверяя участие, полномочия организатора и статус голосования
  */
 export class MeetingsService {
   constructor(private readonly db: Database) {}
   /**
-   * Проверяет существование заведения.
-   * @param id ID запрашиваемой записи.
-   * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
+   * Проверяет существование заведения
+   * @param id ID запрашиваемой записи
+   * @param tx Текущая транзакция Prisma для согласованной проверки и записи
    */
   private async requireRestaurant(id: string, tx: Prisma.TransactionClient) {
     const r = await tx.restaurant.findUnique({ where: { id }, select: { id: true } });
     if (!r) throw new NotFoundError("Заведение не найдено");
   }
   /**
-   * Проверяет членство пользователя во встрече и возвращает её запись.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
-   * @throws ForbiddenError для постороннего пользователя; NotFoundError для отсутствующей встречи.
-   * @returns Запись встречи после проверки участия.
+   * Проверяет членство пользователя во встрече и возвращает её запись
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param tx Текущая транзакция Prisma для согласованной проверки и записи
+   * @throws ForbiddenError для постороннего пользователя; NotFoundError для отсутствующей встречи
+   * @returns Запись встречи после проверки участия
    */
   async member(
     userId: string,
@@ -51,12 +51,12 @@ export class MeetingsService {
     return meeting;
   }
   /**
-   * Дополнительно проверяет полномочия организатора встречи.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
-   * @throws ForbiddenError для участника без прав организатора.
-   * @returns Запись встречи после проверки полномочий организатора.
+   * Дополнительно проверяет полномочия организатора встречи
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param tx Текущая транзакция Prisma для согласованной проверки и записи
+   * @throws ForbiddenError для участника без прав организатора
+   * @returns Запись встречи после проверки полномочий организатора
    */
   async owner(
     userId: string,
@@ -69,8 +69,8 @@ export class MeetingsService {
     return meeting;
   }
   /**
-   * Возвращает встречи пользователя с участниками, вариантами, голосами и последним видимым сообщением.
-   * @param userId ID текущего аутентифицированного пользователя.
+   * Возвращает встречи пользователя с участниками, вариантами, голосами и последним видимым сообщением
+   * @param userId ID текущего аутентифицированного пользователя      
    */
   async list(userId: string) {
 
@@ -118,9 +118,9 @@ export class MeetingsService {
     });
   }
   /**
-   * Создаёт будущую встречу, предпочтения организатора и системное сообщение в одной транзакции.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param input Данные операции после проверки HTTP-слоем.
+   * Создаёт будущую встречу, предпочтения организатора и системное сообщение в одной транзакции
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param input Данные операции после проверки HTTP-слоем
    */
   async create(userId: string, input: MeetingInput) {
     const startsAt = meetingInstant(input.date, input.time);
@@ -155,10 +155,10 @@ export class MeetingsService {
     });
   }
   /**
-   * Меняет общие параметры встречи и предпочтения организатора, пока голосование открыто.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param input Данные операции после проверки HTTP-слоем.
+   * Меняет общие параметры встречи и предпочтения организатора, пока голосование открыто
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param input Данные операции после проверки HTTP-слоем
    */
   async edit(userId: string, id: string, input: MeetingInput) {
     return this.db.atomic(async (tx) => {
@@ -190,10 +190,10 @@ export class MeetingsService {
     });
   }
   /**
-   * Обновляет только предпочтения текущего участника открытого голосования.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param input Данные операции после проверки HTTP-слоем.
+   * Обновляет только предпочтения текущего участника открытого голосования
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param input Данные операции после проверки HTTP-слоем
    */
   async preferences(userId: string, id: string, input: PreferenceInput) {
     return this.db.atomic(async (tx) => {
@@ -209,10 +209,10 @@ export class MeetingsService {
     });
   }
   /**
-   * Добавляет доступное заведение или возвращает исключённый вариант как ручной выбор участника.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param restaurantId ID заведения, участвующего в голосовании.
+   * Добавляет доступное заведение или возвращает исключённый вариант как ручной выбор участника
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param restaurantId ID заведения, участвующего в голосовании   
    */
   async propose(userId: string, id: string, restaurantId: string) {
     return this.db.atomic(async (tx) => {
@@ -227,10 +227,10 @@ export class MeetingsService {
     });
   }
   /**
-   * Создаёт или заменяет единственный голос участника за предложенный доступный вариант.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param restaurantId ID заведения, участвующего в голосовании.
+   * Создаёт или заменяет единственный голос участника за предложенный доступный вариант
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param restaurantId ID заведения, участвующего в голосовании
    */
   async vote(userId: string, id: string, restaurantId: string) {
     return this.db.atomic(async (tx) => {
@@ -251,10 +251,10 @@ export class MeetingsService {
     });
   }
   /**
-   * Снимает вариант и его голоса; сохраняет исключение, чтобы автоподбор не восстановил его молча.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param restaurantId ID заведения, участвующего в голосовании.
+   * Снимает вариант и его голоса; сохраняет исключение, чтобы автоподбор не восстановил его молча
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param restaurantId ID заведения, участвующего в голосовании   
    */
   async removeCandidate(userId: string, id: string, restaurantId: string) {
     return this.db.atomic(async (tx) => {
@@ -269,11 +269,11 @@ export class MeetingsService {
     });
   }
   /**
-   * Сохраняет в переписке название выбранного места и время встречи по Москве.
-   * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param meeting Встреча, для которой выполняется действие.
-   * @param restaurantId ID заведения, участвующего в голосовании.
+   * Сохраняет в переписке название выбранного места и время встречи по Москве
+   * @param tx Текущая транзакция Prisma для согласованной проверки и записи
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param meeting Встреча, для которой выполняется действие
+   * @param restaurantId ID заведения, участвующего в голосовании 
    */
   private async selectionMessage(tx: Prisma.TransactionClient, userId: string, meeting: { id: string; startsAt: Date }, restaurantId: string) {
     const restaurant = await tx.restaurant.findUniqueOrThrow({ where: { id: restaurantId }, select: { name: true } });
@@ -281,9 +281,9 @@ export class MeetingsService {
       text: `${restaurant.name}, ${meeting.startsAt.toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}` } });
   }
   /**
-   * Организатором фиксирует единственного лидера и закрывает голосование; ничья не допускается.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
+   * Организатором фиксирует единственного лидера и закрывает голосование; ничья не допускается
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
    */
   async select(userId: string, id: string) {
     return this.db.atomic(async (tx) => {
@@ -300,11 +300,11 @@ export class MeetingsService {
     });
   }
   /**
-   * Подтверждает бронь выбранного места или отменяет подтверждение. Повторное подтверждение того же места идемпотентно.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param restaurantId ID заведения, участвующего в голосовании.
-   * @param cancel При true отменяет подтверждение бронирования.
+   * Подтверждает бронь выбранного места или отменяет подтверждение. Повторное подтверждение того же места идемпотентно
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param restaurantId ID заведения, участвующего в голосовании
+   * @param cancel При true отменяет подтверждение бронирования
    */
   async booking(
     userId: string,
@@ -354,10 +354,10 @@ export class MeetingsService {
     });
   }
   /**
-   * Добавляет существующий аккаунт по нормализованному email в открытое голосование.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param email Email добавляемого пользователя.
+   * Добавляет существующий аккаунт по нормализованному email в открытое голосование
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param email Email добавляемого пользователя 
    */
   async addMember(userId: string, id: string, email: string) {
     return this.db.atomic(async (tx) => {
@@ -378,10 +378,10 @@ export class MeetingsService {
     });
   }
   /**
-   * Удаляет участника и его голос; организатор не может удалить самого себя.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param target ID удаляемого участника.
+   * Удаляет участника и его голос; организатор не может удалить самого себя
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param target ID удаляемого участника
    */
   async removeMember(userId: string, id: string, target: string) {
     return this.db.atomic(async (tx) => {
@@ -395,9 +395,9 @@ export class MeetingsService {
     });
   }
   /**
-   * Создаёт приглашение на семь дней, сохраняя только хеш случайного токена.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
+   * Создаёт приглашение на семь дней, сохраняя только хеш случайного токена
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
    */
   async invite(userId: string, id: string) {
     await this.owner(userId, id);
@@ -412,9 +412,9 @@ export class MeetingsService {
     return { token, url: `meetly://invite?token=${token}`, expiresInDays: 7 };
   }
   /**
-   * Проверяет срок и отзыв приглашения и идемпотентно добавляет пользователя в открытую встречу.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param token Токен клиента; не записывается в журнал.
+   * Проверяет срок и отзыв приглашения и идемпотентно добавляет пользователя в открытую встречу
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param token Токен клиента; не записывается в журнал 
    */
   async accept(userId: string, token: string) {
     return this.db.atomic(async (tx) => {

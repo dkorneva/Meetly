@@ -3,7 +3,7 @@ import { Tokens } from "../infrastructure/tokens";
 import { Database } from "../infrastructure/database";
 import { MeetingsService } from "./meetings.service";
 /**
- * Хранит вложения в SQL Server и выдаёт временные ссылки с проверкой прав при каждом скачивании.
+ * Хранит вложения в БД и выдаёт временные ссылки с проверкой прав при каждом скачивании
  */
 export class FilesService {
   constructor(
@@ -12,12 +12,12 @@ export class FilesService {
     private readonly jwt: Tokens,
   ) {}
   /**
-   * Проверяет тип файла и участие во встрече, сохраняет содержимое и возвращает подписанную ссылку.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param file Файл загрузки либо имя ресурса карты.
-   * @param meetingId ID встречи, доступ к которой проверяется.
-   * @throws При нарушении прав, правил операции или недоступности требуемых данных.
-   * @returns ID, имя, MIME-тип и временный URL файла.
+   * Проверяет тип файла и участие во встрече, сохраняет содержимое и возвращает подписанную ссылку
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param file Файл загрузки либо имя ресурса карты
+   * @param meetingId ID встречи, доступ к которой проверяется
+   * @throws При нарушении прав, правил операции или недоступности требуемых данных
+   * @returns ID, имя, MIME-тип и временный URL файла
    */
   async upload(userId: string, file: Express.Multer.File | undefined, meetingId?: string) {
     if (!file) throw new BadRequestError("Выберите файл");
@@ -48,10 +48,10 @@ export class FilesService {
     return { ...result, url: await this.url(result.id, userId) };
   }
   /**
-   * Создаёт ссылку на файл с JWT на один час, привязанным к файлу и пользователю.
-   * @param fileId ID файла, для которого формируется ссылка.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @returns Абсолютный URL скачивания с токеном на один час.
+   * Создаёт ссылку на файл с JWT на один час, привязанным к файлу и пользователю
+   * @param fileId ID файла, для которого формируется ссылка
+   * @param userId ID текущего аутентифицированного пользователя
+   * @returns Абсолютный URL скачивания с токеном на один час
    */
   async url(fileId: string, userId: string) {
     const token = await this.jwt.sign(
@@ -61,11 +61,11 @@ export class FilesService {
     return `${process.env.PUBLIC_URL}/api/files/${fileId}?token=${token}`;
   }
   /**
-   * Проверяет назначение и подпись токена, соответствие файлу и актуальные права его получателя.
-   * @param id ID запрашиваемой записи.
-   * @param token Токен клиента; не записывается в журнал.
-   * @throws При нарушении прав, правил операции или недоступности требуемых данных.
-   * @returns Запись файла с бинарным содержимым для HTTP-ответа.
+   * Проверяет назначение и подпись токена, соответствие файлу и актуальные права его получателя
+   * @param id ID запрашиваемой записи
+   * @param token Токен клиента; не записывается в журнал
+   * @throws При нарушении прав, правил операции или недоступности требуемых данных
+   * @returns Запись файла с бинарным содержимым для HTTP-ответа  
    */
   async download(id: string, token: string) {
     let sub: string;

@@ -4,8 +4,13 @@ import { requireAuth, userId } from "./auth";
 import { limit } from "./rate-limit";
 import * as validate from "./validation";
 
+/**
+ * Описывает HTTP-запросы, связанные с чатом встречи: получить сообщения, отправить сообщение и поставить или убрать реакцию
+ */
+
 export function chatRoutes(services: Services) {
   const router = Router({ mergeParams: true });
+  // mergeParams: true позволяет обработчикам получить параметры, объявленные во внешнем адресе
   const authenticate = requireAuth(services.auth);
   router.get("/", limit(), authenticate, async function (req, res) {
     const meetingId = validate.uuid(req.params.meetingId, "meetingId");

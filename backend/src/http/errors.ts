@@ -1,4 +1,4 @@
-/** Ожидаемая ошибка запроса. Её сообщение можно показать пользователю. */
+/** Ожидаемая ошибка запроса. Её сообщение можно показать пользователю */
 export class HttpError extends Error {
   constructor(public readonly status: number, message: string) {
     super(message);

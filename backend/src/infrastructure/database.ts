@@ -1,16 +1,16 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 /**
- * Prisma-клиент SQL Server: подключение, отключение и повтор конфликтующих транзакций.
+ * Prisma-клиент SQL Server: подключение, отключение и повтор конфликтующих транзакций
  */
 export class Database extends PrismaClient {
   /**
-   * Открывает соединение с БД при инициализации сервера.
+   * Открывает соединение с БД при инициализации сервера
    */
   async connect() {
     await this.$connect();
   }
   /**
-   * Закрывает соединения Prisma при завершении сервера.
+   * Закрывает соединения Prisma при завершении сервера
    */
   async disconnect() {
     await this.$disconnect();
@@ -42,3 +42,5 @@ export class Database extends PrismaClient {
     }
   }
 }
+
+// Связанные изменения сохраняются вместе: либо сохраняется всё, либо не сохраняется ничего

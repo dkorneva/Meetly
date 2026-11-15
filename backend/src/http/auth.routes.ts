@@ -3,6 +3,12 @@ import { Services } from "../services";
 import { limit } from "./rate-limit";
 import * as validate from "./validation";
 
+/**
+ * Описывает адреса, по которым приложение регистрирует пользователя, выполняет вход, обновляет сессию и выходит из неё.
+ * 
+ * Принимает запрос, проверяет переданные данные, вызывает нужный метод AuthService и отправляет ответ клиенту
+ */
+
 export function authRoutes(services: Services) {
   const router = Router();
   router.post("/register", limit(10), async function (req, res) {

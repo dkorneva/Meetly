@@ -3,7 +3,7 @@ import { Database } from "../infrastructure/database";
 import { MeetingsService } from "./meetings.service";
 import { calendarEvent } from "../domain/calendar";
 /**
- * Экспортирует доступную пользователю встречу в календарный файл ICS.
+ * Экспортирует доступную пользователю встречу в календарный файл ICS
  */
 export class CalendarService {
   constructor(
@@ -11,9 +11,9 @@ export class CalendarService {
     private readonly meetings: MeetingsService,
   ) {}
   /**
-   * Проверяет участие и настройку экспорта, подставляет адрес выбранного заведения и формирует ICS без напоминаний.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
+   * Проверяет участие и настройку экспорта, подставляет адрес выбранного заведения и формирует ICS
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
    */
   async export(userId: string, id: string) {
     const meeting = await this.meetings.member(userId, id);

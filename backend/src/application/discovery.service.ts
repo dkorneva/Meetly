@@ -12,7 +12,7 @@ export interface PlaceFilters {
   openNow?: boolean;
 }
 /**
- * Подбирает заведения из SQL-каталога по предпочтениям участников; внешние источники при подборе не вызываются.
+ * Подбирает заведения из БД по предпочтениям участников
  */
 export class DiscoveryService {
   constructor(
@@ -21,10 +21,10 @@ export class DiscoveryService {
     private readonly restaurants: RestaurantsService,
   ) {}
   /**
-   * Фильтрует и ранжирует каталог, исключая снятые варианты; учитывает кухни, бюджет, расписание и формат встречи.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param id ID запрашиваемой записи.
-   * @param filters Необязательные ограничения каталога.
+   * Фильтрует и ранжирует каталог, учитывает кухни, бюджет, расписание и формат встречи
+   * @param userId ID текущего аутентифицированного пользователя
+   * @param id ID запрашиваемой записи
+   * @param filters Необязательные ограничения каталога
    */
   async list(userId: string, id: string, filters: PlaceFilters = {}) {
     const meeting = await this.meetings.member(userId, id);
@@ -86,7 +86,7 @@ export class DiscoveryService {
       total: items.length,
     };
   }
-  /** Обновляем автоматические варианты, сохраняя ручной выбор и все голоса. */
+  /** Обновляем автоматические варианты, сохраняя ручной выбор и все голоса */
   async apply(userId: string, id: string, filters: PlaceFilters = {}) {
     const result = await this.list(userId, id, filters);
     const top = result.items.slice(0, 3).map((r) => r.id);
