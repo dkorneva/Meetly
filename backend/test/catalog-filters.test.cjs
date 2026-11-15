@@ -17,14 +17,14 @@ test('HTTP: filters cover every stored cuisine and price; meeting preferences ac
     const codes=new Set(rows.flatMap(r=>r.cuisines.map(c=>c.code)));
     assert.ok(options.cuisines.length>6);
     for(const code of codes)assert.ok(options.cuisines.some(label=>cuisineCodes(label).includes(code)),`Missing ${code}`);
-    for(const row of rows)if(row.price!==null){assert.ok(options.budget.prices.includes(row.price));assert.ok(options.budget.max>=row.price);}
+    for(const row of rows){assert.ok(options.budget.prices.includes(row.price));assert.ok(options.budget.max>=row.price);}
     for(const label of options.cuisines){
       const result=(await auth(http.get('/api/restaurants/discovery').query({cuisine:label})).expect(200)).body;
       const expected=rows.filter(r=>r.cuisines.some(c=>cuisineCodes(label).includes(c.code))).map(r=>r.id).sort();
       assert.deepEqual(result.items.map(r=>r.id).sort(),expected,label);
     }
     const all=(await auth(http.get('/api/restaurants/discovery').query({budget:options.budget.max})).expect(200)).body;
-    assert.equal(all.total,rows.filter(r=>r.price!==null).length);
+    assert.equal(all.total,rows.length);
     const selectedCuisines=['Японская','Грузинская'];
     const combined=(await auth(http.get('/api/restaurants/discovery').query({cuisines:selectedCuisines})).expect(200)).body;
     const combinedCodes=selectedCuisines.flatMap(cuisineCodes);

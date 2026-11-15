@@ -31,11 +31,9 @@ export class RestaurantsService {
     // true — открыто, false — закрыто, null — определить не удалось.
     let openNow: boolean | null = null;
     try {
-      if (r.openingHours) {
-        const h = new OpeningHours(r.openingHours);
-        // Если расписание даёт неопределённый ответ, оставляем null.
-        openNow = h.getUnknown() ? null : h.getState();
-      }
+      const h = new OpeningHours(r.openingHours);
+      // Если расписание даёт неопределённый ответ, оставляем null.
+      openNow = h.getUnknown() ? null : h.getState();
     } catch {
       // При ошибке в расписании всё равно показываем заведение; openNow остаётся null.
     }
@@ -78,11 +76,11 @@ export class RestaurantsService {
     const rows = await this.db.restaurant.findMany({
       select: {price: true, cuisines: {select: {code: true}}},
     });
-    // flatMap собирает цены: [] пропускает неизвестную, [r.price] добавляет известную.
+    // Собираем цены всех заведений: цена обязательна в базе.
     // Set убирает повторы, [...Set] превращает коллекцию обратно в массив.
     // sort с a - b располагает числа от меньшего к большему.
     const prices = [...new Set(
-      rows.flatMap(r => r.price === null ? [] : [r.price]),
+      rows.map(r => r.price),
     )].sort((a, b) => a - b);
     return {
       // Собираем кухни всех заведений, переводим коды на русский, убираем повторы.
@@ -108,7 +106,7 @@ export class RestaurantsService {
    * Если включён openNow, дополнительно оставляет только открытые сейчас.
    * @param _userId ID пользователя. Здесь не используется: каталог общий для всех.
    * @param filters Необязательные ограничения. Без них получим весь каталог.
-   * @returns Заведения, поле предупреждения и количество записей с неизвестной ценой.
+   * @returns Заведения и поле предупреждения.
    */
   async filterCatalog(_userId: string, filters: {
     cuisine?: string;
@@ -120,7 +118,7 @@ export class RestaurantsService {
     // Собираем условия запроса. Тип Prisma помогает проверить их правильность.
     // Пустой объект означает отсутствие ограничений.
     const where: Prisma.RestaurantWhereInput = {};
-    // lte — «меньше или равно». Неизвестная цена null этому условию не подходит.
+    // lte — «меньше или равно».
     if (filters.budget) where.price = {lte: filters.budget};
     // Собираем одиночный выбор cuisine и список cuisines в общий массив.
     // ?? [] подставляет пустой массив, если список не передали.
@@ -148,11 +146,8 @@ export class RestaurantsService {
     // только true. Закрытые заведения и записи с неизвестным расписанием исключаются.
     // Если фильтр не включён, !filters.openNow даёт true и оставляем все записи.
     const items = rows.map(r => this.view(r)).filter(r => (!filters.openNow || r.openNow === true));
-    // Считаем записи без цены. price: null заменяет условие бюджета из ...where,
-    // остальные условия сохраняются. openNow сюда не входит: его проверяли отдельно.
-    const unknownPriceCount = await this.db.restaurant.count({where: {...where, price: null}});
     // Предупреждения сейчас нет. as задаёт тип TypeScript, но не меняет значение.
-    return {items, warning: undefined as string | undefined, unknownPriceCount};
+    return {items, warning: undefined as string | undefined};
   }
 
   /**

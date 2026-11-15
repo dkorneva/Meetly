@@ -78,7 +78,7 @@ model Restaurant {
   latitude Float
   longitude Float
   cuisine String @db.NVarChar(150)
-  price Int?
+  price Int
   priceCurrency String @default("RUB") @db.VarChar(3)
   priceSource String? @db.NVarChar(1000)
   priceSourceId String? @db.VarChar(50)

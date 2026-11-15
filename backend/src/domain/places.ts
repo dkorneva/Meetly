@@ -40,5 +40,5 @@ export function matchesCuisine(value: string, cuisine: string) {
  * @param value Сохранённые коды кухонь либо значение заголовка.
  */
 export function cuisineLabel(value: string) {
-  return [...new Set(value.split(/[;,\s]+/).filter(Boolean).map(cuisineName))].join(", ") || "Кухня не указана";
+  return [...new Set(value.split(/[;,\s]+/).filter(Boolean).map(cuisineName))].join(", ");
 }

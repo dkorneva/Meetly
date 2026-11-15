@@ -21,7 +21,6 @@ export function restaurantView(r: RemoteRestaurant): Restaurant {
   return {
     ...r,
     cuisineLabel: r.cuisineLabel?.replace(/\s*[·•]\s*/g, ", "),
-    price: r.price ?? 0,
     rating: "",
     tag: r.matchLabel ?? "Реальное заведение",
     image: restaurantPhotos[photoIndex],

@@ -67,7 +67,7 @@ export function RestaurantCard({
         <Row style={styles.priceRow}>
           <View>
             <Text style={styles.price}>
-              {r.price ? `${r.price.toLocaleString("ru-RU")} ₽` : "Неизвестен"}
+              {`${r.price.toLocaleString("ru-RU")} ₽`}
             </Text>
             <Text style={styles.priceHint}>средний чек</Text>
             {!!r.priceSource && <Pressable accessibilityRole="link" accessibilityLabel={`Источник среднего чека ${r.name}`} onPress={event => {event.stopPropagation();void Linking.openURL(r.priceSource!);}}>

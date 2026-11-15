@@ -6,7 +6,7 @@ import {makeController} from '../fixtures';
 jest.mock('../../src/shared/ui/RestaurantMap',()=>({__esModule:true,default:(props:unknown)=>require('react').createElement(require('react-native').View,{testID:'map',...(props as object)})}));
 const filters={budget:'Все',cuisine:[] as string[]};
 const places=Array.from({length:12},(_,i)=>({id:`place-${i}`,name:`Ресторан ${i}`,latitude:55.7558+i*.001,longitude:37.6176,cuisine:'italian',cuisineLabel:'Итальянская',price:1200,address:'Москва, адрес',source:'osm',website:'https://cafe.example',phone:'+74950000000',city:'Москва',district:'Центр',outdoor:false,openingHours:'24/7'}));
-const response={items:places,center:{latitude:55.7558,longitude:37.6176},total:12,unknownPriceCount:0,source:'osm-database'};
+const response={items:places,center:{latitude:55.7558,longitude:37.6176},total:12,source:'osm-database'};
 beforeEach(()=>{jest.mocked(api).mockImplementation(async path=>path.includes('/details')?places.find(p=>path.includes(p.id))!:response)});
 
 test('Обычная карта показывает весь каталог без выбранной встречи и не ограничивает метки восемью',async()=>{

@@ -33,7 +33,7 @@ test('HTTP и SQL: весь каталог без встречи, фильтры
     const auth=r=>r.auth(register.body.accessToken,{type:'bearer'});
     userId=(await auth(http.get('/api/users/me')).expect(200)).body.id;
     const catalog=(await auth(http.get('/api/restaurants/discovery')).expect(200)).body;
-    assert.equal(catalog.total,200);assert.equal(catalog.source,'osm-database');assert.equal(catalog.unknownPriceCount,0);
+    assert.equal(catalog.total,200);assert.equal(catalog.source,'osm-database');
     for(const p of catalog.items){assert.equal(p.source,'osm');assert.ok(p.price>0&&p.phone&&p.website&&p.openingHours&&p.address);assert.ok(p.priceSource&&p.priceFetchedAt);assert.equal(p.available,true)}
     const budget=(await auth(http.get('/api/restaurants/discovery?budget=1500')).expect(200)).body;
     assert.ok(budget.items.length>0&&budget.items.length<200);assert.ok(budget.items.every(p=>p.price<=1500));

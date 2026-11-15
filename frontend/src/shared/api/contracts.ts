@@ -15,7 +15,7 @@ export type RemoteRestaurant = {
   latitude: number;
   longitude: number;
   cuisine: string;
-  price: number | null;
+  price: number;
   priceSource?: string | null;
   priceFetchedAt?: string | null;
   dataSourceUrl?: string | null;
@@ -33,7 +33,6 @@ export type RemoteDiscovery = {
   items: RemoteRestaurant[];
   center: { latitude: number; longitude: number };
   warning?: string;
-  unknownPriceCount: number;
   source: string;
   total: number;
   changed?: boolean;

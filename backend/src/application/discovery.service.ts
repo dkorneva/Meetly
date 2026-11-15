@@ -66,7 +66,7 @@ export class DiscoveryService {
           !excluded.has(r.id) &&
           (!(filters.cuisines?.length || filters.cuisine) || [...(filters.cuisines ?? []), ...(filters.cuisine ? [filters.cuisine] : [])].some(c => matchesCuisine(r.cuisine, c))) &&
           (!filters.budget ||
-            (r.price !== null && r.price <= filters.budget)) &&
+            r.price <= filters.budget) &&
           (!filters.openNow || r.openNow === true) &&
           (!query ||
             `${r.name} ${r.cuisine} ${r.cuisineLabel} ${r.address}`
@@ -82,7 +82,6 @@ export class DiscoveryService {
       items,
       center,
       warning: result.warning,
-      unknownPriceCount: result.unknownPriceCount,
       source: "osm-database",
       total: items.length,
     };

@@ -22,7 +22,7 @@ test("Подбор учитывает кухни и бюджет каждого 
   );
   assert.equal(
     recommendationScore(
-      { cuisine: "italian", price: null, outdoor: false },
+      { cuisine: "italian", price: 2500, outdoor: false },
       prefs,
       "В помещении",
     ),
