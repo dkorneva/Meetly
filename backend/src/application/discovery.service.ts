@@ -34,10 +34,10 @@ export class DiscoveryService {
       budget: m.budget,
       cuisines: JSON.parse(m.cuisines) as string[],
     }));
-    const result = meeting.city === "Москва" ? await this.restaurants.filterCatalog(
+    const result = await this.restaurants.filterCatalog(
       userId,
       filters,
-    ) : {items: [], unknownPriceCount: 0, warning: "Каталог доступен только для Москвы внутри Садового кольца"};
+    );
     const query = (filters.q ?? "").trim().toLowerCase();
     const excluded = new Set((await this.db.candidate.findMany({ where: { meetingId: id, origin: "excluded" }, select: { restaurantId: true } })).map(c => c.restaurantId));
     const evaluated = result.items.map((r) => {
@@ -81,7 +81,7 @@ export class DiscoveryService {
     return {
       items,
       center,
-      warning: meeting.city !== "Москва" ? "Каталог содержит только рестораны Москвы внутри Садового кольца" : result.warning,
+      warning: result.warning,
       unknownPriceCount: result.unknownPriceCount,
       source: "osm-database",
       total: items.length,

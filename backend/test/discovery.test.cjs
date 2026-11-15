@@ -42,8 +42,19 @@ test('HTTP и SQL: весь каталог без встречи, фильтры
     await auth(http.get('/api/restaurants/discovery?distance=1')).expect(400);
     assert.ok(catalog.items.every(p=>!('distanceKm' in p)));
     await auth(http.get('/api/restaurants/discovery?budget=-1')).expect(400);
+    // Устаревший параметр city больше не ограничивает список заведений.
+    const listed=(await auth(http.get('/api/restaurants')).expect(200)).body;
+    const withCity=(await auth(http.get('/api/restaurants').query({city:'Санкт-Петербург'})).expect(200)).body;
+    assert.deepEqual(withCity.map(r=>r.id).sort(),listed.map(r=>r.id).sort());
+    assert.equal(listed.length,200);
+    assert.ok(withCity.every(r=>r.city==='Москва' && r.address));
     const first=catalog.items[0];await auth(http.get(`/api/restaurants/${first.id}/details`)).expect(200);
-    const m=await auth(http.post('/api/meetings')).send({title:'Тест локального каталога',date:new Date(Date.now()+7*86400000).toISOString().slice(0,10),time:'19:00',budget:5000,cuisines:[],city:'Москва',format:'В помещении'}).expect(201);meetingId=m.body.id;
+    const m=await auth(http.post('/api/meetings')).send({title:'Тест локального каталога',date:new Date(Date.now()+7*86400000).toISOString().slice(0,10),time:'19:00',budget:5000,cuisines:[],city:'Санкт-Петербург',format:'В помещении'}).expect(201);meetingId=m.body.id;
+    // Город встречи сохраняется как данные, но не блокирует подбор из каталога.
+    assert.equal(m.body.city,'Санкт-Петербург');
+    const suggested=(await auth(http.get(`/api/meetings/${meetingId}/recommendations`)).expect(200)).body;
+    assert.equal(suggested.total,200);
+    assert.equal(suggested.warning,undefined);
     await auth(http.post(`/api/meetings/${meetingId}/recommendations/apply`)).send({}).expect(201);
     const candidates=await db.candidate.findMany({where:{meetingId}});assert.equal(candidates.length,3);
     const voted=candidates[0].restaurantId;

@@ -60,13 +60,10 @@ export class RestaurantsService {
   /**
    * Получает список заведений по алфавиту и подготавливает каждое через view.
    * @param _userId ID пользователя. Здесь не используется: каталог общий для всех.
-   * @param city Необязательный город. Если не передан, берём заведения всех городов.
    * @returns Массив заведений для отображения в приложении.
    */
-  async list(_userId: string, city?: string) {
+  async list(_userId: string) {
     return (await this.db.restaurant.findMany({
-      // Есть город — ищем по нему; нет — пустой объект не ограничивает выборку.
-      where: city ? {city} : {},
       orderBy: {name: "asc"}, // asc — по возрастанию названия.
     })).map(r => this.view(r));
   }
