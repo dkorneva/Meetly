@@ -51,6 +51,10 @@ async function main(){
   const db=new PrismaClient();const report={source:snapshot.source,osmFetchedAt:snapshot.fetchedAt,priceApi:prices.source,pricesFetchedAt:prices.fetchedAt,total:places.length,eligible:candidates.length,selection:'До 200 записей: обязательны средний чек, адрес, кухня, контакты и валидные часы работы; обеспечено разнообразие кухонь',withPrice:0,withoutPrice:0,reusedIds:0,matches:[]};
   try{
     const before=await db.restaurant.findMany();
+    const staleWhere={catalogArea:AREA,sourceId:{notIn:[...seen]}};
+    const staleIds=(await db.restaurant.findMany({where:staleWhere,select:{id:true}})).map(r=>r.id);
+    if(staleIds.length && (await db.candidate.count({where:{restaurantId:{in:staleIds}}}) || await db.meeting.count({where:{restaurantId:{in:staleIds}}})))
+      throw Error('Импорт отменён: удаляемые заведения используются во встречах. История сохранена.');
     const claimed=new Set();
     for(const p of places){
       const match=p.match, tags=p.tags;
@@ -59,7 +63,7 @@ async function main(){
       const existing=before.find(r=>r.sourceId===p.sourceId)||before.filter(r=>!claimed.has(r.id)&&!r.osmId&&normalize(r.name)===normalize(p.name)&&distance(r,p)<30).sort((a,b)=>distance(a,p)-distance(b,p))[0];
       const data={sourceId:p.sourceId,source:'osm',providerId:'',name:p.name.slice(0,150),address:(p.address||match.row.address).slice(0,500),city:'Москва',district:(tags['addr:suburb']||tags['addr:district']||'Центр').slice(0,100),latitude:p.latitude,longitude:p.longitude,
         cuisine:codes.join(';').slice(0,150),phone:(tags.phone||tags['contact:phone']||'').slice(0,50),website:(tags.website||tags['contact:website']||'').slice(0,1000),openingHours:p.openingHours.slice(0,500),outdoor:tags.outdoor_seating==='yes',
-        catalogArea:AREA,catalogActive:true,osmType:p.osmType,osmId:p.osmId,osmVersion:p.osmVersion,osmUpdatedAt:p.osmUpdatedAt?new Date(p.osmUpdatedAt):null,importedAt:new Date(snapshot.fetchedAt),rawTags:JSON.stringify(tags),
+        catalogArea:AREA,osmType:p.osmType,osmId:p.osmId,osmVersion:p.osmVersion,osmUpdatedAt:p.osmUpdatedAt?new Date(p.osmUpdatedAt):null,importedAt:new Date(snapshot.fetchedAt),rawTags:JSON.stringify(tags),
         dietVegetarian:tags['diet:vegetarian']|| (codes.includes('vegetarian')?'yes':'unknown'),dietVegan:tags['diet:vegan']||(codes.includes('vegan')?'yes':'unknown'),
         price:match?Math.round(match.row.bill):null,priceCurrency:'RUB',priceSource:match?`https://www.restorating.ru/msk/catalogue/${match.row.slug}`:null,priceSourceId:match?String(match.row.id):null,priceFetchedAt:match?new Date(prices.fetchedAt):null,priceMatchDistance:match?match.meters:null};
       const row=await db.$transaction(async tx=>{
@@ -71,8 +75,8 @@ async function main(){
       claimed.add(row.id);if(existing)report.reusedIds++;
       if(match){report.withPrice++;report.matches.push({osm:p.sourceId,name:p.name,price:data.price,restoratingId:match.row.id,restoratingName:match.row.name,distanceMeters:Math.round(match.meters),source:data.priceSource});}else report.withoutPrice++;
     }
-    // Исторические кандидаты и голоса сохраняются. Из поиска исчезают только отсутствующие в новом снимке записи.
-    await db.restaurant.updateMany({where:{catalogArea:AREA,sourceId:{notIn:[...seen]}},data:{catalogActive:false}});
+    // Связанные со встречами записи проверены до начала импорта.
+    await db.restaurant.deleteMany({where:staleWhere});
     await fs.writeFile(path.join(root,'import-report.json'),JSON.stringify(report,null,2));
     await fs.writeFile(path.join(root,'osm/selected-restaurants.json'),JSON.stringify({fetchedAt:snapshot.fetchedAt,selection:report.selection,sourceIds:[...seen]},null,2));
     console.log(JSON.stringify({total:report.total,withPrice:report.withPrice,withoutPrice:report.withoutPrice,reusedIds:report.reusedIds}));

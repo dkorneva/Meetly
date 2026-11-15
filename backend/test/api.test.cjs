@@ -96,7 +96,7 @@ test("Настоящий HTTP API и SQL Server: аккаунты, права, �
     restaurantId = restaurant.id;
     await auth(http.delete(`/api/meetings/${meetingId}/candidates/${restaurantId}`), member).expect(403);
     await auth(http.delete(`/api/meetings/${meetingId}/candidates/${restaurantId}`), outsider).expect(403);
-    await db.restaurant.update({where:{id:restaurantId},data:{catalogArea:"garden-ring",catalogActive:true}});
+    await db.restaurant.update({where:{id:restaurantId},data:{catalogArea:"garden-ring"}});
     await auth(http.post(`/api/meetings/${meetingId}/candidates`))
       .send({ restaurantId })
       .expect(201);

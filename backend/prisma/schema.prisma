@@ -85,7 +85,6 @@ model Restaurant {
   priceFetchedAt DateTime?
   priceMatchDistance Float?
   catalogArea String? @db.VarChar(30)
-  catalogActive Boolean @default(false)
   osmType String? @db.VarChar(10)
   osmId String? @db.VarChar(20)
   osmVersion Int?
@@ -103,7 +102,7 @@ model Restaurant {
   candidates Candidate[]
   cuisines RestaurantCuisine[]
   @@index([city,district])
-  @@index([catalogArea,catalogActive,price])
+  @@index([catalogArea,price])
   @@index([catalogArea,latitude,longitude])
 }
 model RestaurantCuisine {

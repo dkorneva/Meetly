@@ -22,12 +22,12 @@ import {
 export class MeetingsService {
   constructor(private readonly db: Database) {}
   /**
-   * Проверяет существование заведения и его доступность в активном каталоге Садового кольца.
+   * Проверяет существование заведения и его доступность в каталоге Садового кольца.
    * @param id ID запрашиваемой записи.
    * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
    */
   private async requireAvailable(id: string, tx: Prisma.TransactionClient) {
-    const r = await tx.restaurant.findUnique({ where: { id }, select: { catalogArea: true, catalogActive: true } });
+    const r = await tx.restaurant.findUnique({ where: { id }, select: { catalogArea: true } });
     if (!r) throw new NotFoundError("Заведение не найдено");
     if (!catalogAvailable(r)) throw new BadRequestError("Заведение отсутствует в каталоге ресторанов внутри Садового кольца");
   }

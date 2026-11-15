@@ -13,7 +13,7 @@ test('HTTP: filters cover every stored cuisine and price; meeting preferences ac
     const auth=r=>r.auth(session.body.accessToken,{type:'bearer'});
     userId=(await auth(http.get('/api/users/me')).expect(200)).body.id;
     const options=(await auth(http.get('/api/restaurants/filters')).expect(200)).body;
-    const rows=await db.restaurant.findMany({where:{catalogArea:'garden-ring',catalogActive:true},include:{cuisines:true}});
+    const rows=await db.restaurant.findMany({where:{catalogArea:'garden-ring'},include:{cuisines:true}});
     const codes=new Set(rows.flatMap(r=>r.cuisines.map(c=>c.code)));
     assert.ok(options.cuisines.length>6);
     for(const code of codes)assert.ok(options.cuisines.some(label=>cuisineCodes(label).includes(code)),`Missing ${code}`);
