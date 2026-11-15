@@ -3,7 +3,8 @@ const fs=require('node:fs/promises');
 const path=require('node:path');
 const {PrismaClient}=require('@prisma/client');
 const {AREA,inside,normalize,distance,cuisines,matchPrice}=require('./lib/osm-catalog.cjs');
-const root=path.resolve(__dirname,'../catalog');
+// Можно указать отдельную папку снимков, например для проверки импорта на тестовой базе.
+const root=process.env.CATALOG_DIR?path.resolve(process.env.CATALOG_DIR):path.resolve(__dirname,'../catalog');
 const OpeningHours=require('opening_hours');
 /**
  * Преобразует расписание Restorating в строку opening_hours.
