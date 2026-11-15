@@ -2,7 +2,6 @@ import { NotFoundError } from "../http/errors";
 import { Prisma } from "@prisma/client";
 import OpeningHours from "opening_hours";
 import { Database } from "../infrastructure/database";
-import { RestaurantInput } from "./inputs";
 import { cuisineLabel, cuisineCodes, cuisineName } from "../domain/places";
 export const CATALOG_WHERE = { catalogArea: "garden-ring", catalogActive: true };
 /**
@@ -45,12 +44,6 @@ export class RestaurantsService {
       formats: ["В помещении", "На улице", "Не важно"],
     };
   }
-  /**
-   * Сохраняет пользовательскую запись заведения с указанием создавшего аккаунта.
-   * @param userId ID текущего аутентифицированного пользователя.
-   * @param input Данные операции после проверки HTTP-слоем.
-   */
-  create(userId: string, input: RestaurantInput) { return this.db.restaurant.create({data:{...input,createdBy:userId}}); }
   /**
    * Применяет SQL-фильтры и условие открытости; несколько кухонь объединяются по правилу «хотя бы одна».
    * @param filters Необязательные ограничения каталога.

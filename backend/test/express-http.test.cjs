@@ -57,7 +57,6 @@ test('Business routes keep their URLs, methods, success statuses and service han
     ['get','/restaurants','restaurants','list'],['get','/restaurants/filters','restaurants','filters'],
     ['get','/restaurants/discovery','restaurants','discover'],['get','/restaurants/search','restaurants','search'],
     ['get',`/restaurants/${restaurant}/details`,'restaurants','details'],
-    ['post','/restaurants','restaurants','create',{name:'Кафе',address:'Адрес',city:'Москва',district:'Центр',latitude:55,longitude:37,cuisine:'Итальянская'}],
   ];
   for (const [method,path,service,operation,body] of cases) {
     const result = {ok:true,meetingId:meeting,changed:true};
@@ -127,6 +126,7 @@ test('Async service errors retain status codes and unknown failures hide interna
   const failed=await f.http.get('/api/users/me').auth('valid',{type:'bearer'}).expect(500);
   assert.deepEqual(failed.body,{statusCode:500,message:'Внутренняя ошибка сервера'});
   await f.http.get('/api/unknown').expect(404);
+  await f.http.post('/api/restaurants').auth('valid',{type:'bearer'}).send({name:'Новый ресторан'}).expect(404);
 });
 
 test('Login rate limits and browser CORS remain enabled',async t=>{

@@ -80,8 +80,8 @@ test("Настоящий HTTP API и SQL Server: аккаунты, права, �
     await auth(http.patch(`/api/meetings/${meetingId}`), member)
       .send(input)
       .expect(403);
-    const restaurant = await auth(http.post("/api/restaurants"))
-      .send({
+    const restaurant = await db.restaurant.create({
+      data: {
         name: "Изолированный тестовый ресторан",
         address: "Тестовый адрес",
         city: "Москва",
@@ -90,9 +90,10 @@ test("Настоящий HTTP API и SQL Server: аккаунты, права, �
         longitude: 37.61,
         cuisine: "Русская",
         price: 1200,
-      })
-      .expect(201);
-    restaurantId = restaurant.body.id;
+        createdBy: userIds[0],
+      },
+    });
+    restaurantId = restaurant.id;
     await auth(http.delete(`/api/meetings/${meetingId}/candidates/${restaurantId}`), member).expect(403);
     await auth(http.delete(`/api/meetings/${meetingId}/candidates/${restaurantId}`), outsider).expect(403);
     await db.restaurant.update({where:{id:restaurantId},data:{catalogArea:"garden-ring",catalogActive:true}});

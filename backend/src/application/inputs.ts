@@ -22,16 +22,3 @@ export interface MessageInput {
   text: string;
   fileId?: string;
 }
-export interface RestaurantInput {
-  name: string;
-  address: string;
-  city: string;
-  district: string;
-  latitude: number;
-  longitude: number;
-  cuisine: string;
-  price?: number;
-  phone?: string;
-  website?: string;
-  outdoor?: boolean;
-}

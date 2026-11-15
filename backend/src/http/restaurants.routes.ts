@@ -19,9 +19,6 @@ export function restaurantsRoutes(services: Services) {
     if (req.query.city !== undefined) city = validate.queryText(req.query.city);
     res.json(await services.restaurants.list(userId(req), city));
   });
-  router.post("/", limit(), authenticate, async function (req, res) {
-    res.status(201).json(await services.restaurants.create(userId(req), validate.restaurant(req.body)));
-  });
   router.get("/:id/details", limit(), authenticate, async function (req, res) {
     res.json(await services.restaurants.details(validate.uuid(req.params.id)));
   });

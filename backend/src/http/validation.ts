@@ -168,30 +168,6 @@ export function filters(value: unknown): PlaceFilters {
   return result;
 }
 
-export function restaurant(value: unknown) {
-  const data = fields(value, ["name", "address", "city", "district", "latitude", "longitude", "cuisine", "price", "phone", "website", "outdoor"]);
-  let price: number | undefined;
-  let phone: string | undefined;
-  let website: string | undefined;
-  let outdoor: boolean | undefined;
-  if (data.price != null) price = number(data.price, "price", 0, 1000000, true);
-  if (data.phone != null) {
-    phone = text(data.phone, "phone", 5, 51);
-    if (!/^\+?[\d ()-]{5,50}$/.test(phone)) invalid("phone");
-  }
-  if (data.website != null) {
-    website = text(data.website, "website", 1, 1000);
-    if (!/^https:\/\/[^\s]+$/.test(website)) invalid("website");
-  }
-  if (data.outdoor != null) outdoor = boolean(data.outdoor, "outdoor");
-  return {
-    name: text(data.name, "name", 1, 150), address: text(data.address, "address", 1, 500),
-    city: text(data.city, "city", 1, 100), district: text(data.district, "district", 1, 100),
-    latitude: number(data.latitude, "latitude", -90, 90), longitude: number(data.longitude, "longitude", -180, 180),
-    cuisine: text(data.cuisine, "cuisine", 1, 150), price, phone, website, outdoor,
-  };
-}
-
 /** Для одиночных query-параметров не допускаем массивы и вложенные объекты. */
 export function queryText(value: unknown, fallback = ""): string {
   if (value === undefined) return fallback;
