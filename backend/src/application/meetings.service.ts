@@ -2,7 +2,6 @@ import { HIDDEN_BOOKING_NOTICE } from "../domain/chat";
 import { BadRequestError, ForbiddenError, NotFoundError } from "../http/errors";
 import { Prisma } from "@prisma/client";
 import { Database } from "../infrastructure/database";
-import { catalogAvailable, CATALOG_WHERE } from "./restaurants.service";
 import {
   chooseWinner,
   meetingInstant,
@@ -22,14 +21,13 @@ import {
 export class MeetingsService {
   constructor(private readonly db: Database) {}
   /**
-   * Проверяет существование заведения и его доступность в каталоге Садового кольца.
+   * Проверяет существование заведения.
    * @param id ID запрашиваемой записи.
    * @param tx Текущая транзакция Prisma для согласованной проверки и записи.
    */
-  private async requireAvailable(id: string, tx: Prisma.TransactionClient) {
-    const r = await tx.restaurant.findUnique({ where: { id }, select: { catalogArea: true } });
+  private async requireRestaurant(id: string, tx: Prisma.TransactionClient) {
+    const r = await tx.restaurant.findUnique({ where: { id }, select: { id: true } });
     if (!r) throw new NotFoundError("Заведение не найдено");
-    if (!catalogAvailable(r)) throw new BadRequestError("Заведение отсутствует в каталоге ресторанов внутри Садового кольца");
   }
   /**
    * Проверяет членство пользователя во встрече и возвращает её запись.
@@ -92,8 +90,8 @@ export class MeetingsService {
         messages: undefined,
         lastMessage: m.messages[0] ? { text: m.messages[0].text, kind: m.messages[0].kind,
           createdAt: m.messages[0].createdAt, senderId: m.messages[0].senderId, name: m.messages[0].sender.name } : null,
-        unavailableCandidateCount: m.candidates.filter((c) => !catalogAvailable(c.restaurant)).length,
-        candidates: m.candidates.filter((c) => m.status !== "voting" || catalogAvailable(c.restaurant)).map((c) => {
+        unavailableCandidateCount: 0,
+        candidates: m.candidates.map((c) => {
           const matches = m.members.filter((p) => {
             const cuisines = JSON.parse(p.cuisines) as string[];
             return (
@@ -105,7 +103,7 @@ export class MeetingsService {
             ...c,
             restaurant: {
               ...c.restaurant,
-              available: catalogAvailable(c.restaurant), rawTags: undefined,
+              available: true, rawTags: undefined,
               cuisineLabel: cuisineLabel(c.restaurant.cuisine),
               matchLabel:
                 matches === m.members.length
@@ -220,7 +218,7 @@ export class MeetingsService {
     return this.db.atomic(async (tx) => {
       const m = await this.member(userId, id, tx);
       requireVoting(m.status);
-      await this.requireAvailable(restaurantId, tx);
+      await this.requireRestaurant(restaurantId, tx);
       return tx.candidate.upsert({
         where: { meetingId_restaurantId: { meetingId: id, restaurantId } },
         create: { meetingId: id, restaurantId },
@@ -238,7 +236,7 @@ export class MeetingsService {
     return this.db.atomic(async (tx) => {
       const m = await this.member(userId, id, tx);
       requireVoting(m.status);
-      await this.requireAvailable(restaurantId, tx);
+      await this.requireRestaurant(restaurantId, tx);
       if (
         !(await tx.candidate.findFirst({
           where: { meetingId: id, restaurantId, origin: { not: "excluded" } },
@@ -292,7 +290,7 @@ export class MeetingsService {
       const m = await this.owner(userId, id, tx);
       requireVoting(m.status);
       const restaurantId = chooseWinner(
-        await tx.vote.findMany({ where: { meetingId: id, candidate: { restaurant: { ...CATALOG_WHERE } } } }),
+        await tx.vote.findMany({ where: { meetingId: id } }),
       );
       await this.selectionMessage(tx, userId, m, restaurantId);
       return tx.meeting.update({
@@ -330,12 +328,12 @@ export class MeetingsService {
         });
       }
       if (m.status === "completed" && m.restaurantId === restaurantId) return m;
-      await this.requireAvailable(restaurantId, tx);
+      await this.requireRestaurant(restaurantId, tx);
       if (m.status === "completed")
         throw new BadRequestError("Сначала отмените предыдущую бронь");
       const winner =
         m.status === "voting"
-          ? chooseWinner(await tx.vote.findMany({ where: { meetingId: id, candidate: { restaurant: { ...CATALOG_WHERE } } } }))
+          ? chooseWinner(await tx.vote.findMany({ where: { meetingId: id } }))
           : m.restaurantId;
       if (winner !== restaurantId)
         throw new BadRequestError(

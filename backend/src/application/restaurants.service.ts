@@ -3,11 +3,6 @@ import { Prisma } from "@prisma/client";
 import OpeningHours from "opening_hours";
 import { Database } from "../infrastructure/database";
 import { cuisineLabel, cuisineCodes, cuisineName } from "../domain/places";
-export const CATALOG_WHERE = { catalogArea: "garden-ring" };
-/**
- * Проверяет, что запись относится к каталогу Садового кольца.
- */
-export const catalogAvailable = (r: { catalogArea: string | null }) => r.catalogArea === "garden-ring";
 /**
  * Предоставляет локальный каталог, его фильтры и сведения о заведениях.
  */
@@ -17,11 +12,11 @@ export class RestaurantsService {
    * Скрывает исходные теги, вычисляет состояние работы и переводит коды кухонь в подписи.
    * @param r Результат операции.
    */
-  private view<T extends { sourceId: string; cuisine: string; openingHours: string; rawTags: string | null; catalogArea: string | null }>(r: T) {
+  private view<T extends { sourceId: string; cuisine: string; openingHours: string; rawTags: string | null }>(r: T) {
     let openNow: boolean | null = null;
     try { if (r.openingHours) { const h = new OpeningHours(r.openingHours); openNow = h.getUnknown() ? null : h.getState(); } } catch {}
     const { rawTags: _raw, ...data } = r;
-    return { ...data, available: catalogAvailable(r), openNow, cuisineLabel: cuisineLabel(r.cuisine),
+    return { ...data, available: true, openNow, cuisineLabel: cuisineLabel(r.cuisine),
       dataSourceUrl: r.sourceId.startsWith("osm:") ? `https://www.openstreetmap.org/${r.sourceId.slice(4)}` : null };
   }
   /**
@@ -29,14 +24,14 @@ export class RestaurantsService {
    * @param city Город для ограничения каталога.
    */
   async list(_userId: string, city?: string) {
-    return (await this.db.restaurant.findMany({ where: { ...CATALOG_WHERE, ...(city ? {city} : {}) }, orderBy: {name:"asc"} })).map(r=>this.view(r));
+    return (await this.db.restaurant.findMany({ where: city ? {city} : {}, orderBy: {name:"asc"} })).map(r=>this.view(r));
   }
   /**
    * Строит варианты кухонь и среднего чека по записям БД; диапазон бюджета покрывает весь каталог.
    * @returns Кухни, известные чеки и диапазон бюджета актуального каталога.
    */
   async filters() {
-    const rows = await this.db.restaurant.findMany({where: CATALOG_WHERE, select: {price:true, cuisines:{select:{code:true}}}});
+    const rows = await this.db.restaurant.findMany({select: {price:true, cuisines:{select:{code:true}}}});
     const prices = [...new Set(rows.flatMap(r => r.price === null ? [] : [r.price]))].sort((a,b) => a-b);
     return {
       cuisines: [...new Set(rows.flatMap(r => r.cuisines.map(c => cuisineName(c.code))))].sort((a,b) => a.localeCompare(b, "ru")),
@@ -49,7 +44,7 @@ export class RestaurantsService {
    * @param filters Необязательные ограничения каталога.
    */
   async filterCatalog(_userId: string, filters: {cuisine?:string;cuisines?:string[];q?:string;budget?:number;openNow?:boolean} = {}) {
-    const where: Prisma.RestaurantWhereInput = {...CATALOG_WHERE};
+    const where: Prisma.RestaurantWhereInput = {};
     if(filters.budget) where.price = {lte:filters.budget};
     const selected = [...(filters.cuisines ?? []), ...(filters.cuisine ? [filters.cuisine] : [])];
     if(selected.length) where.cuisines = {some:{code:{in:[...new Set(selected.flatMap(cuisineCodes))]}}};

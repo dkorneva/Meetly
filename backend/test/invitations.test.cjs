@@ -27,7 +27,7 @@ test('Invitations enforce expiry, revocation and closed voting without unwanted 
   });
   await t.test('a token issued before selection cannot bypass closed voting',async()=>{
     const token=await invite();
-    const restaurant=await f.db.restaurant.findFirstOrThrow({where:{catalogArea:'garden-ring'}});
+    const restaurant=await f.db.restaurant.findFirstOrThrow();
     await f.auth(f.http.post(`/api/meetings/${meeting.id}/candidates`),owner).send({restaurantId:restaurant.id}).expect(201);
     await f.auth(f.http.put(`/api/meetings/${meeting.id}/vote`),owner).send({restaurantId:restaurant.id}).expect(200);
     await f.auth(f.http.post(`/api/meetings/${meeting.id}/select`),owner).send({}).expect(201);
