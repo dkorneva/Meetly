@@ -28,7 +28,7 @@ async function fixture(t) {
   return {application,services,calls,stub,http:request(application.app)};
 }
 
-test('Every documented business operation keeps its URL, method, success status and service handoff',async t=>{
+test('Business routes keep their URLs, methods, success statuses and service handoff',async t=>{
   const f = await fixture(t);
   const cases = [
     ['post','/auth/register','auth','register',{name:'Тестовый Пользователь',email:'user@example.test',password:'StrongPass123!'}],
@@ -59,7 +59,6 @@ test('Every documented business operation keeps its URL, method, success status 
     ['get',`/restaurants/${restaurant}/details`,'restaurants','details'],
     ['post','/restaurants','restaurants','create',{name:'Кафе',address:'Адрес',city:'Москва',district:'Центр',latitude:55,longitude:37,cuisine:'Итальянская'}],
   ];
-  const document = (await f.http.get('/api/docs-json').expect(200)).body;
   for (const [method,path,service,operation,body] of cases) {
     const result = {ok:true,meetingId:meeting,changed:true};
     f.stub(service,operation,result);
@@ -71,17 +70,6 @@ test('Every documented business operation keeps its URL, method, success status 
     const call=f.calls.find(call=>call[0]===service+'.'+operation);
     assert.ok(call,path+' must reach its service');
     if(service!=='auth' && operation!=='filters' && operation!=='details')assert.equal(call[1],user,path);
-  }
-  // Эти операции проверяются ниже с двоичными/текстовыми ответами и публичным доступом.
-  const extra = [
-    ['get',`/meetings/${meeting}/calendar.ics`],['get',`/files/${user}`],['post','/files'],
-    ['get','/health'],['get','/map'],['get','/map-assets/leaflet.js'],['get','/map-tiles/20/0/0.png'],
-  ];
-  for (const [path,operations] of Object.entries(document.paths)) {
-    const pattern = new RegExp('^'+path.replace(/[.]/g,'\\.').replace(/\{[^}]+\}/g,'[^/]+')+'$');
-    for (const method of Object.keys(operations)) {
-      assert.ok([...cases,...extra].some(item=>item[0]===method && pattern.test('/api'+item[1])),method+' '+path+' lacks a compatibility check');
-    }
   }
 });
 
@@ -125,7 +113,9 @@ test('ICS, file downloads, uploads and public map resources keep headers and lim
   await f.http.get('/api/map-assets/leaflet.js').expect(200).expect('Cache-Control',/max-age=604800/);
   await f.http.get('/api/map-assets/package.json').expect(404);
   await f.http.get('/api/map-tiles/20/0/0.png').expect(404);
-  await f.http.get('/api/docs/').expect(200).expect('Content-Type',/html/);
+  await f.http.get('/api/docs').expect(404);
+  await f.http.get('/api/docs/').expect(404);
+  await f.http.get('/api/docs-json').expect(404);
 });
 
 test('Async service errors retain status codes and unknown failures hide internal diagnostics',async t=>{

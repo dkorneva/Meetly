@@ -3,8 +3,6 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
-import swaggerUi from "swagger-ui-express";
-import openapi from "./http/openapi.json";
 import { createServices } from "./services";
 import { authRoutes } from "./http/auth.routes";
 import { usersRoutes } from "./http/users.routes";
@@ -32,8 +30,6 @@ export async function createApp(options: { connectDatabase?: boolean } = {}) {
   app.use(express.json({ limit: "100kb" }));
   app.use(express.urlencoded({ extended: false, limit: "100kb" }));
 
-  app.get("/api/docs-json", function (req, res) { res.json(openapi); });
-  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openapi));
   app.use("/api/auth", authRoutes(services));
   app.use("/api/users", usersRoutes(services));
   app.use("/api/meetings/:meetingId/messages", chatRoutes(services));
