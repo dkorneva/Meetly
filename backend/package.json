@@ -13,7 +13,8 @@
     "catalog:photos": "node scripts/catalog-photos.cjs",
     "catalog:fetch": "node scripts/fetch-catalog.cjs",
     "catalog:import": "node scripts/import-catalog.cjs",
-    "test:unit": "npm run build && node --test --test-concurrency=1 test/domain.test.cjs test/error-responses.test.cjs test/map-tiles.test.cjs test/transactions.test.cjs test/photos.test.cjs test/catalog-http.test.cjs test/express-http.test.cjs"
+    "test:unit": "npm run build && node --test --test-concurrency=1 test/domain.test.cjs test/error-responses.test.cjs test/map-tiles.test.cjs test/transactions.test.cjs test/photos.test.cjs test/express-http.test.cjs test/validation-boundaries.test.cjs test/service-boundaries.test.cjs test/discovery-boundaries.test.cjs test/startup.test.cjs",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-concurrency=1 --test-coverage-include=\"dist/**/*.js\" --test-coverage-lines=90 --test-coverage-branches=80 --test-coverage-functions=85 test/*.test.cjs"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",

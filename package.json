@@ -2,6 +2,7 @@
   "name": "meetly-project",
   "private": true,
   "scripts": {
-    "start": "node scripts/start.cjs"
+    "start": "node scripts/start.cjs",
+    "test:coverage": "npm --prefix frontend run test:coverage && npm --prefix backend run test:coverage"
   }
 }
