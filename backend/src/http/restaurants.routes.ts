@@ -5,6 +5,7 @@ import { limit } from "./rate-limit";
 import { BadRequestError } from "./errors";
 import * as validate from "./validation";
 
+/** Создаёт маршруты чтения каталога ресторанов и доступных вариантов фильтров. */
 export function restaurantsRoutes(services: Services) {
   const router = Router();
   // получение доступных вариантов фильтров (допустимые список кухонь, границы бюджета и др.)

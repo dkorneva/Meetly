@@ -9,6 +9,7 @@ export function limit(requests = 120) {
     // HTTP заголовки не добавляются в ответы - клиенту не раскрывается информация о лимите
     standardHeaders: false,
     legacyHeaders: false,
+    /** Передаёт ошибку 429 обработчику ошибок, когда пользователь превышает число разрешённых запросов. */
     handler(req, res, next) {
       next(new HttpError(429, "ThrottlerException: Too Many Requests"));
     },

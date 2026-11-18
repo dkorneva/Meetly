@@ -5,6 +5,7 @@ import { NotFoundError } from "./errors";
 import { limit } from "./rate-limit";
 import { queryText } from "./validation";
 
+/** Создаёт маршруты страницы карты, её изображений, файлов Leaflet и проверки работы сервера. */
 export function mapRoutes(tiles: MapTiles) {
   const router = Router();
   // получение картинки подложки

@@ -5,6 +5,7 @@ import { requireAuth, userId } from "./auth";
 import { limit } from "./rate-limit";
 import * as validate from "./validation";
 
+/** Создаёт маршруты загрузки файлов и скачивания по временной ссылке с проверкой доступа. */
 export function filesRoutes(services: Services) {
   const router = Router();
   const upload = multer({ limits: { fileSize: 10 * 1024 * 1024, files: 1 } });

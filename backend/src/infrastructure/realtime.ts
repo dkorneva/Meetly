@@ -18,6 +18,7 @@ export class Realtime {
     this.server = server;
     server.on("connection", (socket) => { void this.handleConnection(socket); }); // обработка подключения клиента
   }
+  /** Сохраняет сервис проверки пользователей и подключение к БД для уведомлений участников. */
   constructor(
     private readonly auth: AuthService, // проверка подключившихся пользователей
     private readonly db: Database, // получение состава участников встречи

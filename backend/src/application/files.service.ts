@@ -6,6 +6,7 @@ import { MeetingsService } from "./meetings.service";
  * Хранит вложения в БД и выдаёт временные ссылки с проверкой прав при каждом скачивании
  */
 export class FilesService {
+  /** Сохраняет подключение к БД, сервис встреч и инструмент токенов для временных ссылок. */
   constructor(
     private readonly db: Database,
     private readonly meetings: MeetingsService,

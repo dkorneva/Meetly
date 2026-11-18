@@ -6,6 +6,7 @@ import { calendarEvent } from "../domain/calendar";
  * Экспортирует доступную пользователю встречу в календарный файл ICS
  */
 export class CalendarService {
+  /** Сохраняет подключение к БД и сервис встреч для проверки доступа при экспорте. */
   constructor(
     private readonly db: Database,
     private readonly meetings: MeetingsService,

@@ -4,6 +4,7 @@ import { requireAuth, userId } from "./auth";
 import { limit } from "./rate-limit";
 import * as validate from "./validation";
 
+/** Создаёт маршруты для встреч, участников, рекомендаций, голосования, брони и экспорта в календарь. */
 export function meetingsRoutes(services: Services) {
   const router = Router();
   const meetings = services.meetings;

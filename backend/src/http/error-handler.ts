@@ -55,6 +55,7 @@ export function errorResponse(error: unknown) {
 }
 
 // Отправка ответа
+/** Отправляет клиенту ответ с кодом и описанием ошибки. Если ответ уже начат, передаёт ошибку следующему обработчику. */
 export const handleError: ErrorRequestHandler = function (error, req, res, next) {
   
   // Если заголовки уже отправлены, передаем ошибку дальше

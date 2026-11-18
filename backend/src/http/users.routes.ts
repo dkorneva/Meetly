@@ -4,6 +4,7 @@ import { requireAuth, userId } from "./auth";
 import { limit } from "./rate-limit";
 import * as validate from "./validation";
 
+/** Создаёт маршруты просмотра и изменения профиля вошедшего пользователя. */
 export function usersRoutes(services: Services) {
   const router = Router();
   const authenticate = requireAuth(services.auth);

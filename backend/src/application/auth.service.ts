@@ -13,6 +13,7 @@ export const tokenHash = (token: string) =>
  * Управляет аккаунтами и серверными сессиями. Пароли хешируются Argon2, refresh-токены сохраняются только в виде SHA-256.
  */
 export class AuthService {
+  /** Сохраняет подключение к БД и инструмент для создания и проверки токенов. */
   constructor(
     private readonly db: Database,
     private readonly jwt: Tokens,

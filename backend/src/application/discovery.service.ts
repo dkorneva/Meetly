@@ -15,6 +15,7 @@ export interface PlaceFilters {
  * Подбирает заведения из БД по предпочтениям участников
  */
 export class DiscoveryService {
+  /** Сохраняет подключение к БД и сервисы встреч и ресторанов для подбора мест. */
   constructor(
     private readonly db: Database,
     private readonly meetings: MeetingsService,

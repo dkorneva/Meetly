@@ -8,6 +8,7 @@ import { FilesService } from "./files.service";
  * Проверяет права на переписку, сохраняет сообщения и реакции, выдаёт страницы истории
  */
 export class ChatService {
+  /** Сохраняет подключение к БД и сервисы проверки доступа к встречам и файлам. */
   constructor(
     private readonly db: Database,
     private readonly meetings: MeetingsService,

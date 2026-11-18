@@ -21,6 +21,7 @@ export function requireAuth(auth: AuthService): RequestHandler {
   };
 }
 
+/** Возвращает ID пользователя из запроса. Если пользователь не вошёл в аккаунт, вызывает ошибку 401. */
 export function userId(req: UserRequest): string {
   if (!req.userId) throw new UnauthorizedError();
   return req.userId;

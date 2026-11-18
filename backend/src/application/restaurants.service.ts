@@ -10,6 +10,7 @@ import { cuisineLabel, cuisineCodes, cuisineName } from "../domain/places";
  */
 export class RestaurantsService {
   // Переданный объект базы сохраняется в this.db и используется в методах
+  /** Сохраняет подключение к БД для чтения каталога ресторанов. */
   constructor(private readonly db: Database) {}
 
   /**

@@ -9,7 +9,7 @@ function invalid(field: string): never {
   throw new BadRequestError("Некорректное поле: " + field);
 }
 
-// проверяется, что значение является объектом с разрешёнными полями
+/** Проверяет, что передан объект и в нём нет неизвестных полей. Возвращает проверенный объект. */
 function fields(value: unknown, allowed: string[]): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new BadRequestError("Ожидается объект с параметрами");
@@ -21,44 +21,39 @@ function fields(value: unknown, allowed: string[]): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-// проверка строки - передана ли строка, не слишком ли она короткая или длинная
+/** Проверяет, что передана строка допустимой длины. Возвращает строку или вызывает ошибку с именем поля. */
 function text(value: unknown, field: string, min: number, max: number): string {
   if (typeof value !== "string" || [...value].length < min || [...value].length > max) invalid(field);
   return value;
 }
 
-// проверяется число в заданном диапазоне, отклоняется NaN и бесконечность
+/** Проверяет число и допустимый диапазон. При integer = true дополнительно требует целое число. */
 function number(value: unknown, field: string, min: number, max: number, integer = false): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) invalid(field);
   if (integer && !Number.isInteger(value)) invalid(field);
   return value;
 }
 
-// проверяется, что значение является булевым
+/** Проверяет, что передано true или false. При другом значении вызывает ошибку с именем поля. */
 function boolean(value: unknown, field: string): boolean {
   if (typeof value !== "boolean") invalid(field);
   return value;
 }
 
-// проверяется, что значение является корректным адресом электронной почты
+/** Проверяет длину и формат адреса электронной почты. Возвращает проверенный адрес. */
 function email(value: unknown): string {
   const result = text(value, "email", 1, 254); // проверка длины
   if (!isEmail(result)) invalid("email"); // проверка формата email
   return result;
 }
 
-// проверяется, что значение является корректным UUID
+/** Проверяет формат UUID — уникального идентификатора записи. При ошибке указывает имя поля. */
 export function uuid(value: unknown, field = "id"): string { // если имя поля не указано, в сообщении об ошибке используется "id"
   if (typeof value !== "string" || !isUUID(value)) invalid(field);
   return value;
 }
 
-// проверка списка кухонь
-// проверяется, что переданное значение массив
-// массив не более чем из 100 элементов 
-// каждый элемент массива проверяется как строка длиной от 1 до 80 символов
-// проверяется, что в массиве нет дубликатов 
-// проверяется, что размер списка после преобразования в JSON-строку не превышает 2000 символов
+/** Проверяет список кухонь: до 100 уникальных строк длиной от 1 до 80 символов и до 2000 символов в JSON. */
 function cuisines(value: unknown): string[] {
   if (!Array.isArray(value) || value.length > 100) invalid("cuisines");
   const result = value.map(item => text(item, "cuisines", 1, 80));
@@ -66,30 +61,20 @@ function cuisines(value: unknown): string[] {
   return result;
 }
 
-// проверка бюджета участника
-// это должно быть целое число
-// от 500 до 100 000
-// кратное 100
+/** Проверяет бюджет: целое число от 500 до 100 000, кратное 100. Возвращает проверенную сумму. */
 function budget(value: unknown): number {
   const result = number(value, "budget", 500, 100000, true);
   if (result % 100 !== 0) invalid("budget");
   return result;
 }
 
-// проверка данных для входа
-// проверяется, что переданное значение содержит поля email и password
-// проверяется, что email является корректным адресом электронной почты
-// проверяется, что пароль является строкой длиной от 1 до 128 символов
+/** Проверяет адрес электронной почты и пароль для входа. Возвращает данные или вызывает ошибку 400. */
 export function login(value: unknown) {
   const data = fields(value, ["email", "password"]);
   return { email: email(data.email), password: text(data.password, "password", 1, 128) };
 }
 
-// проверка данных для регистрации
-// проверяется, что переданное значение содержит поля name, email и password
-// проверяется, что имя является строкой длиной от 2 до 30 символов, начинается и заканчивается буквой, внутри содержит буквы, пробелы или дефисы
-// проверяется, что email является корректным адресом электронной почты
-// проверяется, что пароль является строкой длиной от 8 до 128 символов, содержит маленькую и большую латинские буквы, цифру и специальный символ
+/** Проверяет имя, адрес электронной почты и сложность пароля нового пользователя. Возвращает данные регистрации. */
 export function registration(value: unknown) {
   const data = fields(value, ["name", "email", "password"]);
   const name = text(data.name, "name", 2, 30);
@@ -99,20 +84,13 @@ export function registration(value: unknown) {
   return { name, email: email(data.email), password };
 }
 
-// проверка данных для обновления токена
-// проверяется, что переданное значение содержит поле refreshToken
-// проверяется, что refreshToken является строкой длиной от 40 до 200 символов
+/** Проверяет, что передан refresh-токен длиной от 40 до 200 символов. Возвращает объект с токеном. */
 export function refresh(value: unknown) {
   const data = fields(value, ["refreshToken"]);
   return { refreshToken: text(data.refreshToken, "refreshToken", 40, 200) };
 }
 
-// проверка данных для профиля
-// проверяется, что переданное значение содержит поля name, email, dark, calendar и avatarId
-// проверяется, что имя является строкой длиной от 2 до 30 символов, начинается и заканчивается буквой, внутри содержит буквы, пробелы или дефисы
-// проверяется, что email является корректным адресом электронной почты
-// проверяется, что dark и calendar являются логическими значениями
-// проверяется, что avatarId является UUID или null
+/** Проверяет переданные поля профиля. Разрешает частичное обновление и null для удаления аватара. */
 export function profile(value: unknown): ProfileInput {
   const data = fields(value, ["name", "email", "dark", "calendar", "avatarId"]);
   const result: ProfileInput = {};
@@ -128,15 +106,7 @@ export function profile(value: unknown): ProfileInput {
   return result;
 }
 
-// проверка параметров встречи
-// проверяется, что переданное значение содержит поля title, date, time, budget, cuisines, city и format
-// проверяется, что название является строкой длиной от 2 до 100 символов и содержит хотя бы одну букву или цифру
-// проверяется, что дата имеет формат YYYY-MM-DD
-// проверяется, что время имеет формат HH:MM в 24-часовом формате
-// проверяется, что бюджет является целым числом от 0 до 1000000
-// проверяется, что кухни являются массивом уникальных строк длиной от 1 до 50 символов
-// проверяется, что город является строкой длиной от 1 до 100 символов
-// проверяется, что формат является строкой длиной от 1 до 30 символов и содержит одно из разрешенных значений
+/** Проверяет название, формат даты и времени, бюджет, кухни, город и формат встречи. Существование даты проверяется отдельно при создании момента времени. */
 export function meeting(value: unknown) {
   const data = fields(value, ["title", "date", "time", "budget", "cuisines", "city", "format"]);
   const title = text(data.title, "title", 2, 100);
@@ -152,37 +122,29 @@ export function meeting(value: unknown) {
   return { title, date, time, budget: budget(data.budget), cuisines: cuisines(data.cuisines), city, format };
 }
 
-// проверка данных для предпочтений
-// проверяется, что переданное значение содержит поля budget и cuisines, которые проходят соответствующие проверки
-
+/** Проверяет бюджет и список кухонь участника. Возвращает проверенные предпочтения. */
 export function preferences(value: unknown) {
   const data = fields(value, ["budget", "cuisines"]);
   return { budget: budget(data.budget), cuisines: cuisines(data.cuisines) };
 }
 
-// проверка идентификатора ресторана
-// проверяется, что переданное значение содержит поле restaurantId, которое является UUID
+/** Извлекает из объекта ID ресторана и проверяет, что он имеет формат UUID. */
 export function restaurantId(value: unknown) {
   const data = fields(value, ["restaurantId"]);
   return uuid(data.restaurantId, "restaurantId");
 }
 
-// проверка адреса электронной почты участника
-// проверяется, что переданное значение содержит поле email, которое является адресом электронной почты
+/** Извлекает из объекта адрес электронной почты участника и проверяет его формат. */
 export function memberEmail(value: unknown) {
   return email(fields(value, ["email"]).email);
 }
 
-// проверка токена приглашения
-// проверяется, что переданное значение содержит поле token, которое является строкой длиной от 40 до 200 символов
+/** Извлекает строку токена приглашения и проверяет её длину. Само приглашение проверяется в сервисе встреч. */
 export function invitation(value: unknown) {
   return text(fields(value, ["token"]).token, "token", 40, 200);
 }
 
-// проверка данных сообщения
-// text - строка длиной от 0 до 4000 символов
-// fileId - UUID
-// пустой текст разрешён, поскольку сообщение может содержать только вложение
+/** Проверяет текст сообщения и необязательный ID вложения. Пустой текст допускается для сообщения с файлом. */
 export function message(value: unknown) {
   const data = fields(value, ["text", "fileId"]);
   let fileId: string | undefined;
@@ -190,26 +152,19 @@ export function message(value: unknown) {
   return { text: text(data.text, "text", 0, 4000), fileId };
 }
 
-// проверка реакции на сообщение
-// проверяется, что переданное значение содержит поле liked, которое является булевым значением
+/** Проверяет поле liked и возвращает true или false для изменения реакции на сообщение. */
 export function reaction(value: unknown) {
   return boolean(fields(value, ["liked"]).liked, "liked");
 }
 
-// проверка идентификатора встречи для загрузки
-// проверяется, что переданное значение содержит поле meetingId, которое является UUID
+/** Проверяет необязательный ID встречи при загрузке файла. Если ID не передан, возвращает undefined. */
 export function upload(value: unknown) {
   const data = fields(value, ["meetingId"]);
   if (data.meetingId != null) return uuid(data.meetingId, "meetingId");
   return undefined;
 }
 
-// проверка фильтров мест
-// q - строка длиной от 0 до 200 символов
-// budget - число от 1 до 100000
-// cuisine - строка длиной от 1 до 80 символов
-// cuisines - массив из 100 или менее уникальных строк длиной от 1 до 80 символов
-// openNow - булево значение
+/** Проверяет фильтры ресторанов из запроса. Преобразует строковый бюджет в число, а строки true и false — в логические значения. */
 export function filters(value: unknown): PlaceFilters {
   const data = fields(value, ["q", "budget", "cuisine", "cuisines", "openNow"]);
   const result: PlaceFilters = {};

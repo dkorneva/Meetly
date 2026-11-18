@@ -12,6 +12,7 @@ export interface ProfileInput {
  * Читает и изменяет профиль без раскрытия хеша пароля и служебных полей аккаунта
  */
 export class UsersService {
+  /** Сохраняет подключение к БД и сервис файлов для работы с профилем и аватаром. */
   constructor(
     private readonly db: Database,
     private readonly files: FilesService,

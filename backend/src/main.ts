@@ -57,6 +57,7 @@ export async function createApp(options: { connectDatabase?: boolean } = {}) {
   services.realtime.attach(io);
 
   // Открытие порта, запуск сервера
+  /** Запускает сервер на указанном порту и сетевом адресе. По умолчанию принимает подключения через все сетевые интерфейсы. */
   async function listen(port: number, host = "0.0.0.0") {
     await new Promise<void>(function (resolve, reject) {
       server.once("error", reject);
@@ -68,6 +69,7 @@ export async function createApp(options: { connectDatabase?: boolean } = {}) {
   }
   // Остановка сервера
   let closing: Promise<void> | undefined;
+  /** Закрывает HTTP-сервер, соединения Socket.IO и подключение к БД. Повторный вызов ожидает уже начатое закрытие. */
   function close(): Promise<void> {
     if (!closing) {
       closing = new Promise<void>(function (resolve) { io.close(function () { resolve(); }); })
@@ -79,12 +81,14 @@ export async function createApp(options: { connectDatabase?: boolean } = {}) {
 }
 
 // Запуск сервера
+/** Создаёт приложение, запускает сервер и настраивает его остановку по сигналам SIGINT и SIGTERM. */
 async function start() {
   const application = await createApp();
   const port = Number(process.env.PORT ?? 3000);
   try { await application.listen(port); }
   catch (error) { await application.close(); throw error; }
   console.log(`Meetly API: http://localhost:${port}/api`);
+  /** Останавливает приложение. Если остановка завершилась с ошибкой, устанавливает код завершения процесса 1. */
   async function shutdown() {
     try { await application.close(); }
     catch { process.exitCode = 1; }
