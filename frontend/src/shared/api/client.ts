@@ -116,7 +116,17 @@ export async function upload(
   const form = new FormData();
   if (Platform.OS === "web")
     form.append("file", await (await fetch(uri)).blob(), name);
-  else form.append("file", { uri, name, type: mime } as unknown as Blob);
+  else {
+    // В Expo SDK 58 fetch не принимает старый формат { uri, name, type }.
+    // Читаем файл устройства и передаём его содержимое как Blob с MIME-типом.
+    const { File } = await import("expo-file-system");
+    const file = new File(uri);
+    if (!file.exists) throw new Error("Выбранный файл недоступен. Выберите его ещё раз.");
+    if (file.size > 10 * 1024 * 1024)
+      throw new Error("Файл слишком большой. Выберите файл размером до 10 МБ.");
+    const blob = new Blob([await file.arrayBuffer()], { type: mime });
+    form.append("file", blob, name);
+  }
   if (meetingId) form.append("meetingId", meetingId);
   return api<{ id: string; url: string; name: string; mime: string }>(
     "/files",
